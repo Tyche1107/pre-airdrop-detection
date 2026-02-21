@@ -15,14 +15,8 @@
   .controls input:focus{border-color:var(--purple);}
   .btn{background:var(--bg2);border:1px solid var(--border2);color:var(--text3);padding:5px 12px;border-radius:5px;cursor:pointer;font-size:12px;}
   .btn:hover{background:var(--bg3);}
-  .cols{display:flex;gap:18px;}
-  .col-exp{flex:3;min-width:0;}
-  .col-paper{flex:1.3;min-width:220px;}
-  .col-paper h2{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.5px;margin:0 0 8px;font-weight:600;}
-  .ps{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:8px 12px;margin-bottom:7px;}
-  .ps-title{font-size:12.5px;font-weight:700;color:var(--purple);margin-bottom:3px;}
-  .ps-body{font-size:12px;color:var(--text3);}
-  .ps-pills{margin-top:4px;display:flex;flex-wrap:wrap;gap:3px;}
+  .cols{display:block;}
+  .col-exp{min-width:0;}
   .pill{font-size:11px;background:var(--bg3);color:var(--text4);border-radius:3px;padding:1px 6px;}
   details{margin:3px 0;border-left:2px solid var(--border2);padding-left:12px;}
   details[open]>summary{color:var(--purple);}
@@ -48,7 +42,7 @@
   .lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;align-items:center;justify-content:center;cursor:zoom-out;}
   .lightbox.open{display:flex;}
   .lightbox img{max-width:92vw;max-height:92vh;border-radius:8px;}
-  @media(max-width:800px){.cols{flex-direction:column;}.col-paper{display:none;}}
+  @media(max-width:800px){.cols{display:block;}}
 </style>
 </head>
 <body>
@@ -457,22 +451,6 @@
 </div>
 
 <!-- ===== 右列：论文章节 ===== -->
-<div class="col-paper">
-<h2>论文章节对应</h2>
-<div class="ps"><div class="ps-title">1. Introduction</div><div class="ps-body">提出问题：事后检测无法预防，需要事前预警</div><div class="ps-pills"><span class="pill">[02]</span></div></div>
-<div class="ps"><div class="ps-title">2. Background</div><div class="ps-body">Blur S2 积分机制；ARTEMIS 综述；sybil 行为分类</div><div class="ps-pills"><span class="pill">[11]</span><span class="pill">[21]</span></div></div>
-<div class="ps"><div class="ps-title">3. Method</div><div class="ps-body">时间截断设计；18 特征工程；LightGBM 训练流程</div><div class="ps-pills"><span class="pill">[01]</span><span class="pill">[02]</span></div></div>
-<div class="ps"><div class="ps-title">4. Experiments</div><div class="ps-body">主结果 / 消融 / 特征分析 / 泛化 / 跨协议</div><div class="ps-pills"><span class="pill">[02]</span><span class="pill">[03]</span><span class="pill">[04]</span><span class="pill">[06]</span><span class="pill">[07]</span><span class="pill">[08]</span><span class="pill">[10]</span><span class="pill">[12]</span><span class="pill">[14]</span><span class="pill">[16]</span><span class="pill">[17]</span><span class="pill">[20]</span><span class="pill">[21]</span></div></div>
-<div class="ps"><div class="ps-title">5. Discussion</div><div class="ps-body">GNN 事前失效；Gitcoin 标注定义；逃避成本博弈；Two-stage open-world；局限性</div><div class="ps-pills"><span class="pill">[09][15]</span><span class="pill">[18]</span><span class="pill">[23]</span><span class="pill">[25]</span><span class="pill">[26]</span></div></div>
-<div class="ps"><div class="ps-title">6. Conclusion</div><div class="ps-body">主结论汇总；LayerZero 跨类型迁移；规则 vs ML；未来方向</div><div class="ps-pills"><span class="pill">[24]</span><span class="pill">[27]</span><span class="pill">[19]</span></div></div>
-<hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
-<h2>状态</h2>
-<div style="font-size:12px;color:var(--text3);line-height:2.2;">
-  <span class="pill" style="background:#1a3a1a;color:var(--green);">Done</span> 01-27 全部完成<br>
-  <span class="pill" style="background:#1a3a1a;color:var(--green);">Done</span> LayerZero 29,849 地址已抓<br>
-  <span class="pill" style="background:#2a1a2a;color:var(--purple);">Next</span> LZ 时序消融（第二事件验证）
-</div>
-</div>
 </div>
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
