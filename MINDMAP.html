@@ -2,421 +2,658 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pre-Airdrop Sybil Detection — 实验全景</title>
 <style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; padding: 24px 32px; line-height: 1.6; }
-  h1 { font-size: 20px; color: #a78bfa; margin-bottom: 4px; border-bottom: 1px solid #2d3748; padding-bottom: 10px; }
-  .subtitle { font-size: 13px; color: #718096; margin-bottom: 8px; }
-  .topcard { background: #1a202c; border: 1px solid #4a5568; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; display: flex; gap: 32px; flex-wrap: wrap; }
+  :root {
+    --bg: #0f1117;
+    --bg2: #1a202c;
+    --bg3: #2d3748;
+    --border: #2d3748;
+    --border2: #4a5568;
+    --text: #e2e8f0;
+    --text2: #cbd5e0;
+    --text3: #94a3b8;
+    --text4: #718096;
+    --purple: #a78bfa;
+    --green: #68d391;
+    --red: #fc8181;
+    --yellow: #f6e05e;
+    --blue: #63b3ed;
+  }
+  [data-theme="light"] {
+    --bg: #f7fafc;
+    --bg2: #edf2f7;
+    --bg3: #e2e8f0;
+    --border: #e2e8f0;
+    --border2: #cbd5e0;
+    --text: #1a202c;
+    --text2: #2d3748;
+    --text3: #4a5568;
+    --text4: #718096;
+    --purple: #6b46c1;
+    --green: #276749;
+    --red: #c53030;
+    --yellow: #b7791f;
+    --blue: #2b6cb0;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); padding: 20px 28px; line-height: 1.65; margin: 0; transition: background 0.2s, color 0.2s; }
+  h1 { font-size: 19px; color: var(--purple); margin-bottom: 3px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  .subtitle { font-size: 12.5px; color: var(--text4); margin-bottom: 10px; }
+
+  /* Top card */
+  .topcard { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 20px; margin-bottom: 14px; display: flex; gap: 28px; flex-wrap: wrap; }
   .metric { display: flex; flex-direction: column; }
-  .metric .val { font-size: 22px; font-weight: 700; color: #68d391; }
-  .metric .lab { font-size: 12px; color: #718096; margin-top: 2px; }
-  details { margin: 5px 0; border-left: 2px solid #4a5568; padding-left: 16px; }
-  details[open] > summary { color: #a78bfa; }
-  summary { cursor: pointer; padding: 7px 8px; border-radius: 6px; font-weight: 600; color: #cbd5e0; list-style: none; display: flex; align-items: flex-start; gap: 8px; user-select: none; font-size: 14px; }
-  summary:hover { background: #1a2035; }
-  summary::before { content: 'v'; font-size: 9px; color: #718096; margin-top: 4px; flex-shrink: 0; transform: rotate(-90deg); display: inline-block; transition: transform 0.2s; }
-  details[open] > summary::before { transform: rotate(0deg); }
-  .body { padding: 6px 8px 8px 24px; color: #94a3b8; font-size: 13.5px; }
-  .why { color: #e2e8f0; font-weight: 500; margin-bottom: 6px; }
-  .finding { background: #1a202c; border-left: 3px solid #68d391; padding: 8px 14px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 13px; color: #e2e8f0; }
-  .failed { border-left-color: #fc8181; }
-  .note { border-left-color: #f6e05e; }
-  table { border-collapse: collapse; margin: 8px 0; font-size: 13px; width: 100%; max-width: 700px; }
-  th { color: #a78bfa; text-align: left; padding: 5px 16px 5px 0; border-bottom: 1px solid #2d3748; font-size: 12px; font-weight: 600; }
-  td { padding: 4px 16px 4px 0; color: #cbd5e0; }
-  td.hi { color: #68d391; font-weight: 600; }
-  td.lo { color: #fc8181; }
-  td.mid { color: #f6e05e; }
-  img.plot { width: 100%; max-width: 800px; border-radius: 8px; margin: 10px 0 4px 0; display: block; border: 1px solid #2d3748; }
-  .tag { font-size: 11px; background: #2d3748; color: #a0aec0; border-radius: 3px; padding: 1px 7px; font-weight: normal; margin-left: 6px; vertical-align: middle; }
-  .q { font-size: 14px; color: #f6e05e; }
-  .divider { border: none; border-top: 1px solid #1e2535; margin: 14px 0; }
-  button#expand { background: #2d3748; border: none; color: #a0aec0; padding: 5px 14px; border-radius: 5px; cursor: pointer; font-size: 12px; margin-bottom: 16px; }
-  button#expand:hover { background: #4a5568; }
+  .metric .val { font-size: 21px; font-weight: 700; color: var(--green); }
+  .metric .lab { font-size: 11.5px; color: var(--text4); margin-top: 2px; }
+
+  /* Controls */
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .controls input { background: var(--bg2); border: 1px solid var(--border2); color: var(--text); padding: 5px 12px; border-radius: 5px; font-size: 13px; width: 220px; outline: none; }
+  .controls input::placeholder { color: var(--text4); }
+  .controls input:focus { border-color: var(--purple); }
+  .btn { background: var(--bg2); border: 1px solid var(--border2); color: var(--text3); padding: 5px 14px; border-radius: 5px; cursor: pointer; font-size: 12.5px; }
+  .btn:hover { background: var(--bg3); color: var(--text); }
+
+  /* Two-column layout */
+  .cols { display: flex; gap: 20px; }
+  .col-exp { flex: 3; min-width: 0; }
+  .col-paper { flex: 1.4; min-width: 240px; }
+  .col-paper h2 { font-size: 13px; color: var(--text4); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; margin-top: 0; font-weight: 600; }
+  .paper-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; }
+  .paper-section .ps-title { font-size: 12.5px; font-weight: 600; color: var(--purple); margin-bottom: 5px; }
+  .paper-section .ps-body { font-size: 12px; color: var(--text3); line-height: 1.6; }
+  .paper-section .ps-exps { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .exp-pill { font-size: 11px; background: var(--bg3); color: var(--text4); border-radius: 3px; padding: 1px 7px; }
+
+  /* Experiment tree */
+  details { margin: 4px 0; border-left: 2px solid var(--border2); padding-left: 14px; }
+  details[open] > summary { color: var(--purple); }
+  summary { cursor: pointer; padding: 6px 8px; border-radius: 6px; font-weight: 600; color: var(--text2); list-style: none; display: flex; align-items: flex-start; gap: 8px; user-select: none; font-size: 13.5px; transition: background 0.15s; }
+  summary::-webkit-details-marker { display: none; }
+  summary:hover { background: var(--bg2); }
+  summary::before { content: ''; width: 8px; height: 8px; border: 1.5px solid var(--text4); border-radius: 1px; margin-top: 4px; flex-shrink: 0; transform: rotate(45deg); display: inline-block; transition: transform 0.15s; }
+  details[open] > summary::before { transform: rotate(135deg); border-color: var(--purple); }
+  .body { padding: 6px 6px 10px 22px; color: var(--text3); font-size: 13px; }
+  .why { color: var(--text2); font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+  .paper-contrib { background: var(--bg2); border-left: 3px solid var(--purple); padding: 6px 12px; border-radius: 0 5px 5px 0; margin: 8px 0; font-size: 12.5px; color: var(--purple); }
+  .paper-contrib::before { content: "Paper:  "; font-weight: 600; }
+  .finding { background: var(--bg2); border-left: 3px solid var(--green); padding: 8px 14px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 12.5px; color: var(--text); }
+  .failed { border-left-color: var(--red); }
+  .note { border-left-color: var(--yellow); }
+  .fail-reason { background: var(--bg2); border-left: 3px solid var(--red); padding: 8px 14px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 12.5px; color: var(--text); }
+  .fail-reason::before { content: "Why it failed:  "; font-weight: 600; color: var(--red); }
+  .switch-reason { background: var(--bg2); border-left: 3px solid var(--yellow); padding: 8px 14px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 12.5px; color: var(--text); }
+  .switch-reason::before { content: "So we did instead:  "; font-weight: 600; color: var(--yellow); }
+
+  table { border-collapse: collapse; margin: 8px 0; font-size: 12.5px; width: 100%; max-width: 700px; }
+  th { color: var(--purple); text-align: left; padding: 4px 14px 4px 0; border-bottom: 1px solid var(--border); font-size: 11.5px; font-weight: 600; }
+  td { padding: 4px 14px 4px 0; color: var(--text2); border-bottom: 1px solid var(--border); }
+  td.hi { color: var(--green); font-weight: 600; }
+  td.lo { color: var(--red); }
+  td.mid { color: var(--yellow); }
+  hr.div { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+  img.plot { width: 100%; max-width: 780px; border-radius: 7px; margin: 10px 0 4px 0; display: block; border: 1px solid var(--border); cursor: zoom-in; }
+
+  /* Tags */
+  .tag { font-size: 11px; background: var(--bg3); color: var(--text4); border-radius: 3px; padding: 1px 6px; font-weight: normal; margin-left: 6px; vertical-align: middle; }
+  .tag.done { background: #1a3a1a; color: var(--green); }
+  .tag.wip { background: #3a2a00; color: var(--yellow); }
+  .tag.blocked { background: #3a1a1a; color: var(--red); }
+  .q { font-size: 14px; color: var(--yellow); }
+
+  /* Image lightbox */
+  .lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 1000; align-items: center; justify-content: center; cursor: zoom-out; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 8px; }
+
+  /* Search highlight */
+  .search-highlight { background: rgba(167, 139, 250, 0.25); border-radius: 2px; }
+  .search-hidden { display: none; }
+
+  @media (max-width: 820px) {
+    .cols { flex-direction: column; }
+    .col-paper { display: none; }
+  }
 </style>
 </head>
 <body>
 
 <h1>Pre-Airdrop Sybil Detection — 实验全景</h1>
-<div class="subtitle">23 个实验 / Blur Season 2 / 对比基准 ARTEMIS WWW24 / 最后更新 2026-02-21</div>
+<div class="subtitle">23 个实验 / Blur Season 2 NFT 空投 / 对比基准 ARTEMIS WWW'24 / 最后更新 2026-02-21</div>
 
 <div class="topcard">
   <div class="metric"><span class="val">0.905</span><span class="lab">T-30 AUC (提前1个月)</span></div>
   <div class="metric"><span class="val">+10.2%</span><span class="lab">vs ARTEMIS 0.803</span></div>
   <div class="metric"><span class="val">0.895</span><span class="lab">T-180 AUC (提前6个月)</span></div>
-  <div class="metric"><span class="val">0.981</span><span class="lab">1% 微调后跨协议 AUC</span></div>
+  <div class="metric"><span class="val">0.982</span><span class="lab">1% 微调后跨协议 AUC</span></div>
   <div class="metric"><span class="val">0.780</span><span class="lab">公共特征集零样本迁移</span></div>
 </div>
 
-<button id="expand" onclick="document.querySelectorAll('details').forEach(d=>d.open=!d.open)">全部展开 / 折叠</button>
-
-<!-- ══════════════════════════════════════════════════════════ -->
-<!-- ROOT -->
-<!-- ══════════════════════════════════════════════════════════ -->
-<details open>
-<summary class="q">ARTEMIS 只能在空投之后识别猎人，那时候钱已经没了</summary>
-
-<div class="body">
-ARTEMIS（WWW'24，我们实验室发的）用空投发完之后的完整数据来识别 sybil，AUC 0.803。问题在于这是事后验尸，对预防没有任何帮助。我们想知道：空投之前有没有信号？
+<div class="controls">
+  <input id="searchbox" type="text" placeholder="搜索实验、结论、特征名..." oninput="doSearch(this.value)">
+  <button class="btn" onclick="setAll(true)">全部展开</button>
+  <button class="btn" onclick="setAll(false)">全部折叠</button>
+  <button class="btn" onclick="toggleTheme()">亮色 / 暗色</button>
 </div>
 
-  <!-- ── Q1 ── -->
-  <details open>
-  <summary class="q">能提前识别吗？</summary>
+<div class="cols">
+<!-- LEFT: 实验流程 -->
+<div class="col-exp">
 
-    <details>
-    <summary>[01] 特征工程 <span class="tag">build_features</span></summary>
-    <div class="body">
-      <div class="why">为什么这样做特征：</div>
-      猎人要赚空投积分，必须提前在链上交易，这些交易记录是客观存在的。我们从 TXS2（3.2M 条 NFT 交易，251K 个地址）里按时间截断提取 18 个行为特征，关键是买入次数、覆盖的 NFT 系列数、钱包年龄、最近活跃度等。截断点设在 T-7、T-14、T-30、T-60、T-90，分别生成独立的特征集，这样才能严格验证"提前多久能识别"。
-    </div>
-    </details>
+<!-- ============================================================ -->
+<!-- ROOT QUESTION -->
+<!-- ============================================================ -->
+<details open>
+<summary class="q">ARTEMIS 只能在空投结束之后识别猎人，那时候钱已经发出去了</summary>
+<div class="body">
+ARTEMIS（WWW'24，我们实验室发的）用空投发完之后的完整链上数据来识别 sybil，AUC 0.803。核心问题是这是事后诊断，对预防空投被刷没有任何实际帮助。我们想解决的问题是：在空投发生之前，链上数据里有没有可检测的信号？
+</div>
 
-    <details>
-    <summary>[02] LightGBM 基准 <span class="tag">train_lightgbm</span></summary>
-    <div class="body">
-      <div class="why">为什么选 LightGBM 而不是神经网络：</div>
-      两个原因。第一，表格结构的行为特征用树模型效果通常优于神经网络。第二，ARTEMIS 用的是复杂的 GNN，如果我们也用 GNN 且效果更好，那贡献只是"更好的 GNN"；但如果我们用简单模型事前做，效果还更好，那贡献是"问题定义本身就做对了"。
-      <div class="finding">T-30 AUC 0.905，ARTEMIS 0.803。简单模型，事前数据，效果更好。</div>
-      <table>
-        <tr><th>模型</th><th>数据</th><th>AUC</th></tr>
-        <tr><td>ARTEMIS（论文）</td><td>事后</td><td class="lo">0.803</td></tr>
-        <tr><td>LightGBM T-30（我们）</td><td>事前</td><td class="hi">0.905</td></tr>
-        <tr><td>LightGBM T-90（我们）</td><td>事前</td><td class="hi">0.902</td></tr>
-        <tr><td>ArtemisNet GNN（我们复现，事后）</td><td>事后</td><td>0.976</td></tr>
-        <tr><td>ArtemisNet GNN（我们，T-30 事前）</td><td>事前</td><td class="lo">0.586</td></tr>
-      </table>
-      <img class="plot" src="data/model_comparison_plot.png">
-    </div>
-    </details>
+<!-- ==================== Q1: 能提前识别吗 ==================== -->
+<details open>
+<summary class="q">能提前识别吗？</summary>
 
-  </details>
-
-  <!-- ── Q2 ── -->
-  <details open>
-  <summary class="q">能提前多久？</summary>
-
-    <details>
-    <summary>[03] 时间消融 T0 到 T-90 <span class="tag">temporal_ablation</span></summary>
-    <div class="body">
-      <div class="why">为什么要测多个时间点而不只报一个：</div>
-      如果只报 T-30，审稿人会问 T-60 怎么样，T-90 还行不行。时间消融曲线能直接回答"检测窗口有多宽"这个问题，不留疑问。
-      <table>
-        <tr><th>窗口</th><th>提前天数</th><th>AUC</th><th>F1</th></tr>
-        <tr><td>T-0</td><td>0天</td><td class="hi">0.908</td><td>0.682</td></tr>
-        <tr><td>T-7</td><td>7天</td><td class="hi">0.907</td><td>0.683</td></tr>
-        <tr><td>T-14</td><td>14天</td><td class="hi">0.906</td><td>0.683</td></tr>
-        <tr><td>T-30</td><td>30天</td><td class="hi">0.905</td><td>0.683</td></tr>
-        <tr><td>T-60</td><td>60天</td><td class="hi">0.904</td><td>0.683</td></tr>
-        <tr><td>T-90</td><td>90天</td><td class="hi">0.902</td><td>0.684</td></tr>
-      </table>
-      <div class="finding">从空投当天到提前90天，AUC 只掉了 0.006，曲线极其平坦。这说明猎人的行为特征不是临时行为，而是从他们开始刷积分起就稳定存在的。</div>
-      <img class="plot" src="data/temporal_ablation_plot.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[12] 扩展消融 T-120 到 T-180 <span class="tag">extended_temporal</span></summary>
-    <div class="body">
-      <div class="why">为什么要推到 6 个月前：</div>
-      T-90 AUC 0.902 还这么高，自然想知道边界在哪。T-180 仍然有 0.895，说明信号在 6 个月前就已经存在。这意味着猎人在项目激励期开始时就已经在行动，不是临近空投才集中刷。
-      <table>
-        <tr><th>窗口</th><th>AUC</th></tr>
-        <tr><td>T-120</td><td class="hi">0.899</td></tr>
-        <tr><td>T-150</td><td class="hi">0.898</td></tr>
-        <tr><td>T-180</td><td class="hi">0.895</td></tr>
-      </table>
-      <img class="plot" src="data/temporal_ablation_extended_plot.png">
-    </div>
-    </details>
-
-  </details>
-
-  <!-- ── Q3 ── -->
   <details>
-  <summary class="q">为什么这么早就能识别？哪些特征在起作用？</summary>
-
-    <details>
-    <summary>[04] 特征重要性跨时间窗 <span class="tag">feature_importance</span></summary>
-    <div class="body">
-      <div class="why">为什么要看特征重要性随时间的变化，而不只看一个时间点：</div>
-      如果 T-90 和 T-0 用的是同一批特征，那说明检测逻辑是稳定的；如果特征重要性漂移很大，说明早期信号和晚期信号来自不同行为，这对论文故事很重要。
-      <table>
-        <tr><th>特征</th><th>T-0</th><th>T-30</th><th>T-60</th><th>T-90</th></tr>
-        <tr><td>buy_collections (NFT多样性)</td><td class="hi">48%</td><td>44%</td><td>42%</td><td>38%</td></tr>
-        <tr><td>unique_interactions</td><td>7%</td><td>14%</td><td>18%</td><td class="hi">22%</td></tr>
-        <tr><td>buy_value</td><td>12%</td><td>12%</td><td>12%</td><td>12%</td></tr>
-        <tr><td>tx_count</td><td>5%</td><td>6%</td><td>6%</td><td>6%</td></tr>
-      </table>
-      <div class="finding">buy_collections（NFT系列多样性）稳定排第一，但随着时间推早，unique_interactions 的权重在上升。越早识别，"这个地址和多少个不同合约互动"比"买了多少钱"更能说明问题。猎人在早期就开始广撒网，这个策略特征是最持久的信号。</div>
-      <img class="plot" src="data/feature_stability_plot.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[10] SHAP 分析 <span class="tag">shap_analysis</span></summary>
-    <div class="body">
-      <div class="why">为什么做 SHAP 而不只看 LightGBM 自带的特征重要性：</div>
-      LightGBM 的 gain-based importance 有偏差（对高基数特征偏高）。SHAP 是针对每个样本计算贡献，更准确，也能直观看到"哪些地址的哪些特征触发了预警"。
-      <img class="plot" src="data/shap_beeswarm.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[19] SHAP 跨时间窗对比 <span class="tag">shap_temporal</span></summary>
-    <div class="body">
-      <div class="why">为什么要把 T-7、T-30、T-90 的 SHAP 并排放：</div>
-      光有折线图说明特征重要性在变，不够直观。并排 SHAP 能让读者直接看到"提前三个月，模型靠的是什么在预警"。
-      <div class="finding">T-90 时，wallet_age_days（钱包年龄）权重更高，模型在问"这个地址是不是新注册的批量号"。T-7 时，recent_activity 权重上升，模型在问"这个地址最近一周有没有集中刷单"。两种信号互补，覆盖不同时间段的猎人行为。</div>
-      <img class="plot" src="data/shap_temporal_comparison.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[06] 特征组消融 <span class="tag">ablation_features</span></summary>
-    <div class="body">
-      <div class="why">为什么按语义分组消融，而不是逐个特征消融：</div>
-      18 个特征逐一消融噪声大，结论难提炼。按"这组特征对应什么行为假设"来分组，每组消融结果能直接回答"哪种猎人策略特征最关键"。
-      <table>
-        <tr><th>特征组</th><th>AUC</th><th>说明</th></tr>
-        <tr><td>Activity（交易量）</td><td class="hi">0.863</td><td>最强，单组超过 ARTEMIS</td></tr>
-        <tr><td>Diversity（NFT多样性）</td><td class="hi">0.854</td><td>单组也超 ARTEMIS</td></tr>
-        <tr><td>Behavioral（行为模式）</td><td>0.848</td><td></td></tr>
-        <tr><td>Volume（金额）</td><td>0.846</td><td></td></tr>
-        <tr><td>DeFi（Blend 协议）</td><td class="lo">0.544</td><td>几乎无用，猎人不靠 DeFi 刷分</td></tr>
-      </table>
-      <img class="plot" src="data/ablation_plot.png">
-    </div>
-    </details>
-
+  <summary>[01] 特征工程：从原始交易记录提取行为特征 <span class="tag done">Done</span> <span class="tag">AUC: 见 02</span></summary>
+  <div class="body">
+    <div class="why">为什么要这样设计特征：</div>
+    sybil 猎人要赚积分必须在链上操作，这些操作会留下记录。我们从 TXS2（3.2M 条 NFT 交易，251K 个地址）里提取了 18 个行为特征，涵盖 NFT 买入次数、覆盖系列数量、钱包年龄、最近活跃度等。关键设计是按时间截断，分别在 T-7、T-14、T-30、T-60、T-90 生成独立特征集，严格模拟"我们在空投之前 N 天只能看到这些数据"的真实预警场景。
+    <div class="paper-contrib">Section 3 Method: 特征设计是整个方法的基础，时间截断是本文区别于 ARTEMIS 的核心设计决策。</div>
+  </div>
   </details>
 
-  <!-- ── Q4 ── -->
   <details>
-  <summary class="q">复杂的图模型会更好吗？</summary>
-
-    <details>
-    <summary>[07] 图特征增强 <span class="tag">graph_features</span></summary>
-    <div class="body">
-      <div class="why">为什么要做这个实验：</div>
-      ARTEMIS 的核心创新就是 GNN，审稿人一定会问"你不加图信息是不是吃亏了"。所以必须做这个对照。我们把图结构特征提取出来，和行为特征一起喂给 LightGBM。
-      <div class="finding">图特征单独跑是 0.873，行为特征单独是 0.904，合并是 0.905，提升只有 0.001。说明行为特征已经捕获了大部分信号，图结构是锦上添花。</div>
-      <img class="plot" src="data/graph_augmentation_plot.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[09][15] GNN 事后 vs 事前 <span class="tag">artemis_gnn / gnn_preairdrop</span></summary>
-    <div class="body">
-      <div class="why">为什么 GNN 在事前会崩：</div>
-      我们复现了 ArtemisNet，事后数据跑出 0.976（比论文原始 0.803 更高，因为我们用了更严格的 5-fold）。但同样的 GNN 用 T-30 的事前数据跑只有 0.586，接近随机。原因很清楚：ArtemisNet 的图结构依赖空投发放时产生的 transfer 记录（NFT 从发行地址流向各个钱包），这些 edge 在 T-30 时不存在。事前的图是残缺的，GNN 失效了。
-      <div class="finding">这个发现很重要：GNN 在事后检测上很强，但不适用于事前预警任务，因为它依赖事件本身才会产生的数据结构。</div>
-    </div>
-    </details>
-
-  </details>
-
-  <!-- ── Q5 ── -->
-  <details>
-  <summary class="q">模型学到的是真实规律，还是在记忆噪声？</summary>
-
-    <details>
-    <summary>[08] 时间泛化 + 种群泛化 <span class="tag">generalization</span></summary>
-    <div class="body">
-      <div class="why">为什么这两个泛化实验都必须做：</div>
-      时间泛化测的是"在一个时间段学到的规律，能不能在另一个时间段用"；种群泛化测的是"没见过的 sybil 类型，能不能识别"。两个维度不同，必须分别验证。
-      <table>
-        <tr><th>实验</th><th>AUC</th><th>说明</th></tr>
-        <tr><td>标准 5-fold CV (T-30)</td><td class="hi">0.904</td><td>基准</td></tr>
-        <tr><td>时间泛化 (T-90 训练, T-30 测试)</td><td class="hi">0.898</td><td>仅降 0.006，规律稳定</td></tr>
-        <tr><td>种群泛化 (50% 未见 sybil 类型)</td><td class="mid">0.744</td><td>合理，没有崩</td></tr>
-      </table>
-      <img class="plot" src="data/generalization_plot.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[05] Precision-Recall 和阈值分析 <span class="tag">pr_analysis</span></summary>
-    <div class="body">
-      <div class="why">为什么要做阈值分析：</div>
-      实际部署时，不同场景对误报率的容忍度不同。平台方可能希望精度高（少误伤正常用户），研究方可能希望召回高（不漏掉任何猎人）。阈值分析给出了完整的权衡曲线。
-      <table>
-        <tr><th>阈值</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
-        <tr><td>0.10</td><td>0.31</td><td class="hi">0.98</td><td>0.47</td></tr>
-        <tr><td>0.20</td><td>0.38</td><td>0.95</td><td>0.54</td></tr>
-        <tr><td>0.30</td><td>0.43</td><td>0.92</td><td>0.59</td></tr>
-        <tr><td>0.50</td><td colspan="2">F1 最优区间</td><td class="hi">最优</td></tr>
-      </table>
-      <img class="plot" src="data/precision_recall_threshold.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[22] 模型概率校准 <span class="tag">calibration</span></summary>
-    <div class="body">
-      <div class="why">为什么校准比 AUC 更重要（对部署来说）：</div>
-      AUC 只衡量排序能力，不管概率本身准不准。如果模型说某个地址有 70% 概率是 sybil，这个 70% 必须是可信的，否则任何基于概率阈值的决策都不可靠。我们用 Brier Score 来量化校准质量。
-      <table>
-        <tr><th>模型</th><th>AUC</th><th>Brier Score</th></tr>
-        <tr><td>LightGBM 原始</td><td>0.905</td><td class="lo">0.1204</td></tr>
-        <tr><td>LightGBM + Isotonic 校准</td><td>0.905</td><td class="hi">0.0911</td></tr>
-      </table>
-      <div class="finding">Isotonic 校准把 Brier Score 降了 24%，AUC 几乎不变。校准后的概率更可信，适合实际部署。AUC 相同，但校准版本对下游决策系统更友好。</div>
-      <img class="plot" src="data/calibration_curve.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[11] Sybil 内部聚类 <span class="tag">sybil_clustering</span></summary>
-    <div class="body">
-      <div class="why">为什么要对 sybil 内部做分类：</div>
-      如果所有 sybil 都是同一种行为，聚类没有意义。但如果内部有子类型（散户猎人、专业团队、超级机器人），那每种类型的检测难度可能不同，这是一个有意思的发现。
-      <table>
-        <tr><th>类型</th><th>数量</th><th>买入次数</th><th>NFT系列</th><th>Blend操作</th></tr>
-        <tr><td>散户猎人</td><td>49,039</td><td>8</td><td>4</td><td>0</td></tr>
-        <tr><td>中量猎人</td><td>601</td><td>794</td><td>75</td><td>0</td></tr>
-        <tr><td>超级机器人</td><td>6</td><td class="hi">9,099</td><td>63</td><td class="hi">4,248</td></tr>
-      </table>
-      <img class="plot" src="data/sybil_clustering_plot.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[20] 聚类 K 值选择依据 <span class="tag">clustering_k_selection</span></summary>
-    <div class="body">
-      <div class="why">为什么需要做这个补充实验：</div>
-      之前说"3 个聚类"没有数学依据，只凭直觉。审稿人会问 K 怎么选的。Silhouette 分析给出了客观依据。
-      <div class="finding">Silhouette 最高点在 K=2（0.984），但 K=3 是 Inertia 曲线的自然拐点。我们保留 K=3，因为它对应有意义的行为类别（散户、中量、超级机器人），而 K=2 虽然统计最优，但把中量猎人和超级机器人合并会丢失信息。这是一个在统计最优和语义可解释之间做的有意识权衡。</div>
-      <img class="plot" src="data/clustering_k_selection.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[21] 按 Sybil 行为类型的留一法泛化 <span class="tag">flag_type_generalization</span></summary>
-    <div class="body">
-      <div class="why">为什么这个比随机种群泛化更有信息量：</div>
-      随机抽 50% sybil 做泛化测试，混合了所有类型，测的是平均泛化能力。按类型留一法测的是"如果完全没见过某种 sybil 策略，能不能识别"，这是更强的泛化要求。
-      <table>
-        <tr><th>留出类型</th><th>测试 sybil 数</th><th>AUC</th></tr>
-        <tr><td>BW (大额买入型)</td><td>12,412</td><td class="lo">0.047</td></tr>
-        <tr><td>FD (刷积分后抛售型)</td><td>14,156</td><td class="lo">0.110</td></tr>
-        <tr><td>ML (市场循环型)</td><td>1,814</td><td class="lo">0.241</td></tr>
-        <tr><td>HF (高频小额型)</td><td>1,704</td><td class="mid">0.550</td></tr>
-      </table>
-      <div class="finding">移除 BW 类型后测试，AUC 直接掉到 0.047，接近随机猜。这说明模型严重依赖每种类型特有的行为模式，BW 的高买入金额特征是模型识别它们的唯一线索，一旦训练集里没有 BW，模型就不知道怎么识别高金额地址了。每种 sybil 类型都有自己的行为指纹，跨类型泛化极差。</div>
-      <img class="plot" src="data/flag_type_generalization.png">
-    </div>
-    </details>
-
-    <details>
-    <summary>[13] 对抗鲁棒性 + 成本量化 <span class="tag">adversarial_robustness / adversarial_cost</span></summary>
-    <div class="body">
-      <div class="why">为什么要量化逃避的成本，而不只测逃避后的 AUC：</div>
-      之前版本只说"降低 diversity 可以降低被检测概率"，但这不完整。猎人降低 diversity 的同时，Blur 积分也会按同样的比例下降。如果逃避的代价比被抓住的损失还大，这个攻击策略就不值得做。
-      <table>
-        <tr><th>Diversity 降低幅度</th><th>模型 AUC</th><th>Blur 积分保留</th></tr>
-        <tr><td>0% (不变)</td><td class="hi">0.917</td><td>100%</td></tr>
-        <tr><td>30%</td><td>0.916</td><td class="mid">83.7%</td></tr>
-        <tr><td>70%</td><td>0.914</td><td class="lo">55.0%</td></tr>
-        <tr><td>90%</td><td>0.913</td><td class="lo">32.8%</td></tr>
-      </table>
-      <div class="finding">把 diversity 降低 90%，检测 AUC 只降 0.5%，但积分损失了 67%。这是自我打脸的攻击：猎人要逃避检测，就要放弃大部分利润。逃避成本远高于被检测的后果，所以这条路在经济上不成立。</div>
-      <img class="plot" src="data/adversarial_cost_tradeoff.png">
-    </div>
-    </details>
-
-  </details>
-
-  <!-- ── Q6 ── -->
-  <details>
-  <summary class="q">能推广到其他协议吗？</summary>
-
-    <details>
-    <summary>[14][16b] Blur 到 Hop：零样本 vs 微调 <span class="tag">cross_protocol / lopo_blur_hop</span></summary>
-    <div class="body">
-      <div class="why">为什么选 Hop 作为第一个跨协议测试对象：</div>
-      Hop 有官方公布的 sybil 地址名单，标注质量有保证。而且 Hop 是桥接协议，和 Blur 的 NFT 机制完全不同，如果能迁移，说服力更强。
-      <table>
-        <tr><th>训练数据</th><th>AUC</th><th>P@1000</th></tr>
-        <tr><td>Blur only (零样本)</td><td class="lo">0.500</td><td>0.055</td></tr>
-        <tr><td>Blur + 1% Hop 标注</td><td class="hi">0.982</td><td>0.958</td></tr>
-        <tr><td>Blur + 5% Hop 标注</td><td class="hi">0.982</td><td>0.950</td></tr>
-        <tr><td>Blur + 20% Hop 标注</td><td class="hi">0.981</td><td>0.955</td></tr>
-      </table>
-      <div class="finding">零样本完全失败（0.50），但 1% 微调立刻跳到 0.982，且 1% 和 20% 效果几乎一样。这说明两件事：Blur 的特征不能直接迁移，但模型的底层结构能快速适应新协议，只要有一点点标注数据。对新协议来说，收集 300 个标注样本就够了。</div>
-    </div>
-    </details>
-
-  </details>
-
-  <!-- ── Q7 ── -->
-  <details>
-  <summary class="q">为什么零样本跨协议那么差？是因为特征不同，还是行为本身不同？</summary>
-
-    <details>
-    <summary>[16] 三协议 LOPO：Blur、Hop、Gitcoin <span class="tag">lopo_crossprotocol</span></summary>
-    <div class="body">
-      <div class="why">为什么加入 Gitcoin：</div>
-      只有 Blur 和 Hop 两个协议，可能有偶然性。Gitcoin 是完全不同的场景（捐赠，不是交易），加进来能测试跨场景的泛化极限。
-      <table>
-        <tr><th>训练</th><th>测试</th><th>AUC</th><th>类型</th></tr>
-        <tr><td>hop + gitcoin</td><td>blur</td><td class="lo">0.220</td><td>零样本</td></tr>
-        <tr><td>blur + gitcoin</td><td>hop</td><td class="lo">0.376</td><td>零样本</td></tr>
-        <tr><td>blur + hop</td><td>gitcoin</td><td class="lo">0.466</td><td>零样本</td></tr>
-        <tr><td>Blur 域内</td><td>blur</td><td class="hi">0.862</td><td>域内</td></tr>
-        <tr><td>Hop 域内</td><td>hop</td><td class="hi">0.975</td><td>域内</td></tr>
-        <tr><td>Gitcoin 域内</td><td>gitcoin</td><td class="mid">0.634</td><td>域内</td></tr>
-      </table>
-    </div>
-    </details>
-
-    <details>
-    <summary>[17] 公共特征集 LOPO：排除特征不匹配的干扰 <span class="tag">common_features_lopo</span> — 新</summary>
-    <div class="body">
-      <div class="why">这个实验的动机：</div>
-      之前三协议 LOPO 的跨协议 AUC 只有 0.22-0.47，我们当时说"协议间行为规律不通用"。但仔细想，Blur 用的是 NFT 专属特征（买入系列数、NFT 交易次数），Hop 用的是通用 ETH 特征（交易数、转账额）。特征集本身就不一样，比较结果当然差。这不是行为不通用，是特征不可比。
-      <br><br>
-      所以我们重做了一遍：对三个协议都只用 5 个公共特征（tx_count、total_volume、unique_contracts、wallet_age_days、active_span_days），重新跑 LOPO。
-      <table>
-        <tr><th>训练</th><th>测试</th><th>旧 AUC（专属特征）</th><th>新 AUC（公共特征）</th></tr>
-        <tr><td>hop + gitcoin</td><td>blur</td><td class="lo">0.220</td><td class="hi">0.624 +40%</td></tr>
-        <tr><td>blur + gitcoin</td><td>hop</td><td class="lo">0.376</td><td class="hi">0.780 +40%</td></tr>
-        <tr><td>blur + hop</td><td>gitcoin</td><td class="lo">0.466</td><td class="mid">0.468 持平</td></tr>
-      </table>
-      <div class="finding">Blur-Hop 之间的零样本迁移从 0.38 跳到 0.78，这是大幅提升。说明之前的失败大部分是特征不匹配导致的，不是行为本质不同。换了公共特征之后，Blur 和 Hop 的 sybil 行为有相当程度的共性。Gitcoin 还是很低（0.47），因为捐赠行为本身就和交易行为不是一个维度。</div>
-    </div>
-    </details>
-
-    <details>
-    <summary>[18] Gitcoin 域内为什么只有 0.634 <span class="tag">gitcoin_feature_importance</span> — 新</summary>
-    <div class="body">
-      <div class="why">为什么要专门解释这个数字：</div>
-      Gitcoin 域内 0.634，远低于 Blur 的 0.862 和 Hop 的 0.975。审稿人会质疑这是不是数据质量问题，还是方法问题。必须给出具体解释。
-      <div class="finding">我们跑了 Gitcoin 的特征重要性。最关键发现：gitcoin_donations（捐赠次数）重要性是 0%，完全没有预测力。这个特征理应最能区分"真正的 Gitcoin 参与者"和 sybil，但它没有。原因是 Gitcoin 的 sybil 和正常用户捐赠行为几乎一样，都是捐几个项目。区分它们的唯一线索是基础链上指标（钱包年龄、交易次数），和 sybil 的身份（批量新号）有关，和 Gitcoin 本身的机制无关。这说明 Gitcoin 的 SADScore 标注的是"链上行为异常的地址"，不是"Gitcoin 特定的刷量行为"，所以域内 AUC 低是数据定义问题，不是模型问题。</div>
-      <img class="plot" src="data/gitcoin_shap.png">
-    </div>
-    </details>
-
-  </details>
-
-  <!-- ── Q8 ── -->
-  <details>
-  <summary class="q">同类协议之间迁移会更好吗？</summary>
-
-    <details>
-    <summary>[进行中] LayerZero 多链数据 <span class="tag">WIP</span></summary>
-    <div class="body">
-      <div class="why">为什么选 LayerZero：</div>
-      Hop 是桥接协议，LayerZero 也是跨链桥接，两者机制相似。如果 Hop 到 LayerZero 的迁移比 Blur 到 LayerZero 更好，就能说明"协议类型"是决定跨协议迁移效果的关键变量，这是比现在更强的结论。
-      <br><br>
-      目前正在抓取 LayerZero 29,849 个地址的 ETH、Arbitrum、Polygon 三链数据，预计今天上午完成。完成后加入 LOPO 实验。
-    </div>
-    </details>
-
+  <summary>[02] LightGBM 基准：T-30 AUC 0.905 vs ARTEMIS 0.803 <span class="tag done">Done</span> <span class="tag">AUC 0.905</span></summary>
+  <div class="body">
+    <div class="why">为什么选 LightGBM 而不是神经网络：</div>
+    两个理由。第一，表格结构的行为特征在树模型上的效果通常不比神经网络差。第二，贡献定位问题：ARTEMIS 的核心是 GNN，如果我们改进的是"模型更复杂"，那贡献是更好的模型；但如果我们用更简单的模型，在更早的数据上，效果还更好，那贡献是"问题重新定义本身就做对了"。后者更有意义。
+    <div class="finding">T-30 AUC 0.905，ARTEMIS 0.803。用更少的数据，更简单的模型，效果提高了 10%。</div>
+    <table>
+      <tr><th>模型</th><th>数据时间</th><th>AUC</th></tr>
+      <tr><td>ARTEMIS（原论文）</td><td>事后完整</td><td class="lo">0.803</td></tr>
+      <tr><td>LightGBM T-30（本文）</td><td>提前 30 天</td><td class="hi">0.905</td></tr>
+      <tr><td>LightGBM T-90（本文）</td><td>提前 90 天</td><td class="hi">0.902</td></tr>
+      <tr><td>ArtemisNet GNN（我们复现，事后）</td><td>事后完整</td><td>0.976</td></tr>
+      <tr><td>ArtemisNet GNN（我们，T-30 事前）</td><td>提前 30 天</td><td class="lo">0.586</td></tr>
+    </table>
+    <div class="paper-contrib">Section 4 Experiments 主结果表：这是全文最核心的数字，回答"事前能不能检测"。</div>
+    <img class="plot" src="data/model_comparison_plot.png" onclick="openLightbox(this)">
+  </div>
   </details>
 
 </details>
 
+<!-- ==================== Q2: 能提前多久 ==================== -->
+<details>
+<summary class="q">能提前多久？信号多早就有了？</summary>
+
+  <details>
+  <summary>[03] 时间消融：T-0 到 T-90 <span class="tag done">Done</span> <span class="tag">AUC 0.902-0.908</span></summary>
+  <div class="body">
+    <div class="why">为什么要测多个时间点而不只报一个数字：</div>
+    报一个 T-30 AUC，审稿人会问 T-7 怎样，T-90 还行不行。时间消融曲线能直接回答"检测窗口宽不宽"，把潜在问题都提前堵上。
+    <table>
+      <tr><th>窗口</th><th>提前天数</th><th>AUC</th><th>F1</th></tr>
+      <tr><td>T-0</td><td>0天（空投当天）</td><td class="hi">0.908</td><td>0.682</td></tr>
+      <tr><td>T-7</td><td>7天</td><td class="hi">0.907</td><td>0.683</td></tr>
+      <tr><td>T-14</td><td>14天</td><td class="hi">0.906</td><td>0.683</td></tr>
+      <tr><td>T-30</td><td>30天</td><td class="hi">0.905</td><td>0.683</td></tr>
+      <tr><td>T-60</td><td>60天</td><td class="hi">0.904</td><td>0.683</td></tr>
+      <tr><td>T-90</td><td>90天</td><td class="hi">0.902</td><td>0.684</td></tr>
+    </table>
+    <div class="finding">从空投当天到提前 90 天，AUC 只掉了 0.006。这个曲线极其平坦，说明猎人的行为模式不是临时抱佛脚，而是从他们开始刷积分的第一天起就稳定存在。这个稳定性本身就是一个重要发现。</div>
+    <div class="paper-contrib">Section 4: 时间消融曲线是论文里回答"窗口有多宽"的核心图，预计是 Figure 3。</div>
+    <img class="plot" src="data/temporal_ablation_plot.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[12] 扩展消融：T-120 到 T-180 <span class="tag done">Done</span> <span class="tag">AUC 0.895</span></summary>
+  <div class="body">
+    <div class="why">为什么要推到 6 个月前：</div>
+    T-90 AUC 0.902 还这么高，自然想知道边界在哪。这是顺藤摸瓜的实验，不需要额外假设，直接跑就能知道信号能追溯多远。
+    <table>
+      <tr><th>窗口</th><th>AUC</th></tr>
+      <tr><td>T-120</td><td class="hi">0.899</td></tr>
+      <tr><td>T-150</td><td class="hi">0.898</td></tr>
+      <tr><td>T-180</td><td class="hi">0.895</td></tr>
+    </table>
+    <div class="finding">提前 6 个月 AUC 仍有 0.895，说明猎人在激励期开始时就已经在操作，不是临近空投才集中刷。这个结果让我们的"早期预警"叙事更有说服力。</div>
+    <div class="paper-contrib">Section 4 补充实验：完善时间消融曲线至 T-180，加强主论点。</div>
+    <img class="plot" src="data/temporal_ablation_extended_plot.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+</details>
+
+<!-- ==================== Q3: 为什么能识别 ==================== -->
+<details>
+<summary class="q">为什么这么早就能识别？哪些行为特征在起作用？</summary>
+
+  <details>
+  <summary>[04] 特征重要性跨时间窗：什么特征在不同时间点最有用 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么要看特征重要性随时间的变化，而不只看一个时间点：</div>
+    如果 T-90 和 T-0 用的是同一批特征，说明检测逻辑是稳定的；如果特征重要性漂移很大，说明早期信号和晚期信号来自不同行为，两者需要分开解释。这个实验把"为什么能检测"讲清楚了。
+    <table>
+      <tr><th>特征</th><th>T-0</th><th>T-30</th><th>T-60</th><th>T-90</th></tr>
+      <tr><td>buy_collections（NFT系列多样性）</td><td class="hi">48%</td><td>44%</td><td>42%</td><td>38%</td></tr>
+      <tr><td>unique_interactions</td><td>7%</td><td>14%</td><td>18%</td><td class="hi">22%</td></tr>
+      <tr><td>buy_value</td><td>12%</td><td>12%</td><td>12%</td><td>12%</td></tr>
+      <tr><td>tx_count</td><td>5%</td><td>6%</td><td>6%</td><td>6%</td></tr>
+    </table>
+    <div class="finding">buy_collections（NFT系列多样性）稳定排第一，说明猎人的"广撒网"策略是最持久的行为指纹。越往早期推，unique_interactions 的权重越高，模型在问"这个地址接触过多少个不同合约"，这是对新号批量操作最敏感的特征。</div>
+    <div class="paper-contrib">Section 4 分析：解释模型为什么有效，是 "可解释性" 部分的核心内容。</div>
+    <img class="plot" src="data/feature_stability_plot.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[10] SHAP 分析：单样本级别的特征贡献 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么做 SHAP 而不只用 LightGBM 自带的特征重要性：</div>
+    LightGBM 的 gain-based importance 对高基数特征有偏差（分裂次数多的特征得分虚高）。SHAP 是对每个样本独立计算贡献，更准确，也能直观看到"高 SHAP 值的样本对应什么行为"，不只是个汇总数字。
+    <div class="finding">SHAP top 特征：unique_interactions (0.693), buy_value (0.683), buy_collections (0.623)。确认了特征重要性的排序，但更重要的是 SHAP beeswarm 图展示了每个地址的个体贡献，有高 unique_interactions 且高 buy_value 的地址几乎全是 sybil。</div>
+    <div class="paper-contrib">Section 4 可解释性：Figure 4 的核心图，审稿人期望看到可解释性分析。</div>
+    <img class="plot" src="data/shap_beeswarm.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[19] SHAP 跨时间窗对比：三个时间点的解释并排 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么要把 T-7、T-30、T-90 的 SHAP 并排放：</div>
+    实验 04 的折线图显示特征重要性在变，但数字感不够直观。并排 SHAP 图让读者能直接看到"提前三个月，模型靠的是什么在预警"，而不是猜折线图背后的含义。
+    <div class="finding">T-90 时 wallet_age_days 权重明显更高，模型在问"这个地址是不是新注册的批量号"。T-7 时 recent_activity 权重上升，模型在问"这个地址最近一周有没有集中刷单"。两种信号分别对应"预谋"和"临时冲刺"两种猎人策略，互补覆盖。</div>
+    <div class="paper-contrib">Section 4 补充分析：让特征重要性随时间变化的故事更具体，加强可解释性叙事。</div>
+    <img class="plot" src="data/shap_temporal_comparison.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[06] 特征组消融：哪一类行为最关键 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么按语义分组消融，而不是逐个特征消融：</div>
+    18 个特征逐一消融噪声太大，结论难提炼。按"这组特征对应什么行为假设"来分组，每组消融的结果能直接回答"哪种猎人行为策略特征最关键"，跟论文的假设对得上。
+    <table>
+      <tr><th>特征组</th><th>AUC（只用这组）</th><th>说明</th></tr>
+      <tr><td>Activity（交易频率）</td><td class="hi">0.863</td><td>单组就超过 ARTEMIS 整体</td></tr>
+      <tr><td>Diversity（NFT系列多样性）</td><td class="hi">0.854</td><td>单组也超 ARTEMIS</td></tr>
+      <tr><td>Behavioral（行为模式）</td><td>0.848</td><td>第三</td></tr>
+      <tr><td>Volume（交易金额）</td><td>0.846</td><td>第四</td></tr>
+      <tr><td>DeFi（Blend 协议操作）</td><td class="lo">0.544</td><td>几乎无用</td></tr>
+    </table>
+    <div class="fail-reason">DeFi 特征为什么失效：我们最初以为 Blur 的 Blend 借贷协议会是猎人的刷分手段，所以加进去了。结果 DeFi 组 AUC 只有 0.544，接近随机。原因是 sybil 猎人主要靠批量 NFT 交易赚积分，不靠 Blend，所以 Blend 操作次数对区分猎人和正常用户没有帮助。</div>
+    <div class="paper-contrib">Section 4 消融实验：直接支持论文的核心假设，并排除了 DeFi 特征的干扰。</div>
+    <img class="plot" src="data/ablation_plot.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+</details>
+
+<!-- ==================== Q4: 复杂图模型会更好吗 ==================== -->
+<details>
+<summary class="q">ARTEMIS 的核心是 GNN，加上图信息会更好吗？</summary>
+
+  <details>
+  <summary>[07] 图特征增强：把 GNN 的图信息提取出来喂给 LightGBM <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么必须做这个实验：</div>
+    ARTEMIS 的核心创新是 GNN，审稿人一定会问"你不用图信息是不是吃亏了"。必须做这个对照，否则无法回答这个质疑。我们把图结构特征（度、PageRank、社区归属等）提取出来，和行为特征合并，重新训练。
+    <div class="finding">图特征单独跑 AUC 0.873，行为特征单独 0.904，合并之后 0.905，提升只有 0.001。说明行为特征已经覆盖了绝大部分信号，图结构是锦上添花。</div>
+    <div class="paper-contrib">Section 4 消融：回答审稿人的必答题，说明本文的简单模型不是因为"没加图信息才有差距"。</div>
+    <img class="plot" src="data/graph_augmentation_plot.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[09][15] GNN 事后 vs 事前：为什么 GNN 在事前场景下崩了 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么 GNN 事前会失效，这个发现为什么重要：</div>
+    我们复现了 ArtemisNet，事后数据跑出 0.976（比论文原始 0.803 更高，因为我们用了更严格的 5-fold CV，论文用的是随机划分）。但同样的 GNN 用 T-30 的事前数据跑只有 0.586，接近随机。
+    <div class="fail-reason">GNN 崩掉的原因：ArtemisNet 的图结构依赖空投发放时产生的 transfer 记录，即 NFT 从发行合约流向各个猎人钱包的那批边。这些 edge 在空投发生之前根本不存在，所以 T-30 的图是残缺的，GNN 拿到的是一个空洞的网络，没有任何有效拓扑信息。</div>
+    <div class="finding">这个发现是论文的重要论据：GNN 在事后检测上很强，但不适用于事前预警任务，因为它在架构上依赖事件本身才会产生的数据结构。我们用行为特征规避了这个限制。</div>
+    <div class="paper-contrib">Section 5 Discussion：解释为什么事后方法不能直接用于事前，为本文方法选择提供理论依据。</div>
+  </div>
+  </details>
+
+</details>
+
+<!-- ==================== Q5: 模型可靠吗 ==================== -->
+<details>
+<summary class="q">模型学到的是真实规律，还是在记忆训练集噪声？</summary>
+
+  <details>
+  <summary>[08] 泛化实验：时间泛化 + 种群泛化 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么两种泛化都必须做：</div>
+    时间泛化测的是"在一段时间学到的规律，换一段时间还有效吗"；种群泛化测的是"如果有从没见过的 sybil 类型，能不能识别"。两个维度不同，必须分别验证，否则泛化能力只说了一半。
+    <table>
+      <tr><th>实验</th><th>AUC</th><th>说明</th></tr>
+      <tr><td>标准 5-fold CV（T-30）</td><td class="hi">0.904</td><td>基准</td></tr>
+      <tr><td>时间泛化（T-90 训练，T-30 测试）</td><td class="hi">0.898</td><td>仅降 0.006，规律稳定</td></tr>
+      <tr><td>种群泛化（50% 未见 sybil 类型）</td><td class="mid">0.744</td><td>合理，没有崩</td></tr>
+    </table>
+    <div class="finding">时间泛化几乎无损说明猎人行为规律在这段时间里是稳定的，不是偶然现象。种群泛化 0.744 合理，因为 50% 的 sybil 类型完全未见，能保持这个水平说明模型捕获了某些跨类型共性。</div>
+    <div class="paper-contrib">Section 4 泛化实验：必须有，审稿人验证泛化能力的标准问题。</div>
+    <img class="plot" src="data/generalization_plot.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[05] Precision-Recall 和阈值分析 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么要做阈值分析：</div>
+    AUC 是整体排序能力，不告诉你用什么阈值做决策。实际部署时，平台方和研究方对误报率的容忍度不同，阈值分析给出完整权衡曲线，让读者自己根据需求选。
+    <div class="paper-contrib">Section 4 实用性分析：让结果更接近实际部署，增强论文的落地价值。</div>
+    <img class="plot" src="data/pr_and_comparison_plot.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[22] 模型概率校准：AUC 好看不代表概率可信 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么校准对部署来说比 AUC 更重要：</div>
+    AUC 只衡量排序能力，不管概率本身准不准。如果模型说某个地址有 70% 概率是 sybil，这个 70% 必须是真实的概率估计，否则任何基于分数阈值的系统都不可信。Brier Score 量化了这个误差。
+    <table>
+      <tr><th>模型</th><th>AUC</th><th>Brier Score（越低越好）</th></tr>
+      <tr><td>LightGBM 原始</td><td>0.905</td><td class="lo">0.1204</td></tr>
+      <tr><td>LightGBM + Isotonic 校准</td><td>0.905</td><td class="hi">0.0911</td></tr>
+    </table>
+    <div class="finding">Isotonic 校准把 Brier Score 降了 24%，AUC 几乎不变（0.9054 vs 0.9052）。校准后的概率更可信，适合实际部署中的风险打分系统。这个发现告诉读者：直接用原始 LightGBM 概率做决策是有偏的，需要校准步骤。</div>
+    <div class="paper-contrib">Section 5 实用性讨论：面向部署场景的补充，增强论文的工程价值。</div>
+    <img class="plot" src="data/calibration_curve.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[11] Sybil 内部聚类：猎人不是铁板一块 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么要对 sybil 内部做分类：</div>
+    如果所有 sybil 都是同一种行为，聚类没有意义。但如果内部有子类型，不同类型的检测难度可能不同，这是一个有意思的结构性发现，也能解释后面泛化实验里跨类型 AUC 为什么差。
+    <table>
+      <tr><th>聚类类型</th><th>数量</th><th>平均买入次数</th><th>覆盖系列数</th><th>Blend 操作</th></tr>
+      <tr><td>散户猎人（Cluster 0）</td><td>49,039</td><td>8</td><td>4</td><td>0</td></tr>
+      <tr><td>中量猎人（Cluster 1）</td><td>601</td><td>794</td><td>75</td><td>0</td></tr>
+      <tr><td>超级机器人（Cluster 2）</td><td>6</td><td class="hi">9,099</td><td>63</td><td class="hi">4,248</td></tr>
+    </table>
+    <div class="finding">大多数 sybil 是散户猎人（49,039），每人只刷了几次；超级机器人只有 6 个，但每个平均刷了 9099 次买入。这 6 个地址的操作量等于数千个散户。超级机器人还大量使用 Blend，这是它们和其他 sybil 最大的行为差异。</div>
+    <div class="paper-contrib">Section 4 分析：说明 sybil 生态的内部结构，为后续按类型做泛化测试做铺垫。</div>
+    <img class="plot" src="data/sybil_clustering_plot.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[20] 聚类 K 值的选择依据 <span class="tag done">Done</span> <span class="tag">K=3 选择</span></summary>
+  <div class="body">
+    <div class="why">为什么不直接用 Silhouette 最优的 K：</div>
+    说"用了 3 个聚类"但没有数学依据，审稿人会直接质疑。Silhouette 分析提供了客观依据，但最优 K 不一定是语义最有意义的 K。
+    <table>
+      <tr><th>K</th><th>Inertia</th><th>Silhouette</th></tr>
+      <tr><td>2</td><td>242,969</td><td class="hi">0.984</td></tr>
+      <tr><td>3</td><td>179,998</td><td>0.850</td></tr>
+      <tr><td>4</td><td>128,694</td><td>0.738</td></tr>
+    </table>
+    <div class="finding">Silhouette 最高点在 K=2（0.984），但 K=3 是 Inertia 曲线的自然拐点。我们保留 K=3，因为它对应有业务含义的三个行为类别（散户、中量、超级机器人），而 K=2 把中量猎人和超级机器人合并，丢失了"机器人会用 Blend"这个区分性发现。这是在统计最优和语义可解释之间做了一个有意识的权衡，在论文里会明确说明这个选择。</div>
+    <div class="paper-contrib">Section 4 补充：堵审稿人对 K 选择的质疑。</div>
+    <img class="plot" src="data/clustering_k_selection.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[21] 按 Sybil 行为类型的留一法泛化：跨类型泛化极差 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么这比随机种群泛化（实验 08）更有信息量：</div>
+    随机抽 50% sybil 测泛化，混合了所有类型，测的是平均能力。按类型留一测的是"完全没见过某种 sybil 策略，能不能识别"，这是更严苛的要求，也能精确定位哪种类型最难迁移。
+    <table>
+      <tr><th>留出类型</th><th>测试 sybil 数</th><th>AUC</th></tr>
+      <tr><td>BW（大额买入型）</td><td>12,428</td><td class="lo">0.047</td></tr>
+      <tr><td>FD（刷积分后抛售型）</td><td>14,166</td><td class="lo">0.110</td></tr>
+      <tr><td>ML（市场循环型）</td><td>1,818</td><td class="lo">0.241</td></tr>
+      <tr><td>HF（高频小额型）</td><td>1,704</td><td class="mid">0.550</td></tr>
+    </table>
+    <div class="fail-reason">BW 类型留出后 AUC 掉到 0.047：这说明模型完全依赖高买入金额来识别 BW 类型，但这个特征是 BW 专属的，其他类型的 sybil 买入金额不高，所以训练集里没有 BW 时，模型根本不知道要关注 buy_value 这个维度。每种 sybil 类型都有自己独特的行为指纹，这些指纹之间没有共性，不能互相迁移。</div>
+    <div class="finding">这是一个诚实的负面结果，但有价值：它告诉我们每种 sybil 类型需要有标注样本，模型不能靠看一种类型来识别完全不同策略的猎人。在论文里，这个结果会在局限性部分和未来工作里讨论。</div>
+    <div class="paper-contrib">Section 4 泛化分析 + Section 5 局限性：说明方法的边界，是论文诚实度的体现。</div>
+    <img class="plot" src="data/flag_type_generalization.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[13][23] 对抗鲁棒性和逃避成本量化 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么要量化逃避成本，而不只测逃避后的 AUC：</div>
+    之前的版本只说"降低 diversity 可以降低被检测概率"，但这不完整。猎人降低 diversity 时，他们赚到的 Blur 积分也同比减少。如果逃避检测的代价比被抓住的损失还大，这个攻击策略就不合算。必须把经济账算清楚。
+    <table>
+      <tr><th>NFT Diversity 降低幅度</th><th>模型 AUC</th><th>AUC 变化</th><th>积分保留率</th></tr>
+      <tr><td>0%（不改变）</td><td class="hi">0.917</td><td>--</td><td>100%</td></tr>
+      <tr><td>30%</td><td>0.916</td><td>-0.1%</td><td>83.7%</td></tr>
+      <tr><td>70%</td><td>0.914</td><td>-0.3%</td><td>55.0%</td></tr>
+      <tr><td>90%</td><td>0.913</td><td>-0.4%</td><td>32.8%</td></tr>
+    </table>
+    <div class="finding">把 diversity 降低 90%，检测 AUC 只降 0.4%，但积分损失了 67%。这是自我打脸的攻击：猎人要逃避检测，就必须放弃大部分利润，让这次刷积分本身变得不合算。从博弈论角度，这意味着检测系统在经济上是稳定的，攻击没有动力。</div>
+    <div class="paper-contrib">Section 5 鲁棒性分析：从博弈论视角论证方法的实用价值，这是论文的差异化亮点之一。</div>
+    <img class="plot" src="data/adversarial_cost_tradeoff.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+</details>
+
+<!-- ==================== Q6: 能推广到其他协议吗 ==================== -->
+<details>
+<summary class="q">能推广到其他协议吗？</summary>
+
+  <details>
+  <summary>[14][16b] Blur 到 Hop：第一次跨协议尝试 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么选 Hop 作为第一个跨协议测试对象：</div>
+    Hop 有官方公布的 sybil 地址名单，标注质量有保证。Hop 是跨链桥接协议，和 Blur 的 NFT 机制完全不同，如果能迁移，说服力更强，是真正的跨场景迁移。
+    <table>
+      <tr><th>训练数据</th><th>AUC</th><th>P@1000</th></tr>
+      <tr><td>Blur only（零样本）</td><td class="lo">0.500</td><td>0.055</td></tr>
+      <tr><td>Blur + 1% Hop 标注</td><td class="hi">0.982</td><td>0.958</td></tr>
+      <tr><td>Blur + 5% Hop 标注</td><td class="hi">0.982</td><td>0.950</td></tr>
+      <tr><td>Blur + 20% Hop 标注</td><td class="hi">0.981</td><td>0.955</td></tr>
+    </table>
+    <div class="fail-reason">Blur 纯零样本为什么失败：Blur 用的是 NFT 专属特征（买入系列数、NFT 交易次数），这些特征在 Hop 上根本不存在。模型学到的是"NFT 猎人"的行为，而不是"sybil 猎人"的通用行为，所以迁移到桥接协议完全无效。</div>
+    <div class="finding">但是只需要 1% Hop 标注（约 300 个样本），AUC 就从 0.50 跳到 0.982，而且 1% 和 20% 的效果几乎一样。这说明模型底层结构可以快速适应新协议，只要有少量标注数据。对新协议来说，300 个标注样本就足够了。</div>
+    <div class="paper-contrib">Section 4 跨协议：展示方法的实际可部署性，"只要 300 个样本"是非常有力的实用论点。</div>
+  </div>
+  </details>
+
+</details>
+
+<!-- ==================== Q7: 零样本差是行为不同还是特征不同 ==================== -->
+<details>
+<summary class="q">零样本迁移那么差，是协议行为本质不同，还是特征集不匹配？</summary>
+
+  <details>
+  <summary>[16] 三协议 LOPO：Blur、Hop、Gitcoin <span class="tag done">Done</span> <span class="tag">AUC 0.22-0.47</span></summary>
+  <div class="body">
+    <div class="why">为什么加入 Gitcoin：</div>
+    只有 Blur 和 Hop 两个协议可能有偶然性。Gitcoin 是捐赠平台，sybil 策略完全不同（刷假捐赠），加进来能测试跨场景泛化的极限。
+    <table>
+      <tr><th>训练</th><th>测试</th><th>AUC</th></tr>
+      <tr><td>hop + gitcoin</td><td>blur</td><td class="lo">0.220</td></tr>
+      <tr><td>blur + gitcoin</td><td>hop</td><td class="lo">0.376</td></tr>
+      <tr><td>blur + hop</td><td>gitcoin</td><td class="lo">0.466</td></tr>
+      <tr><td>Blur 域内</td><td>blur</td><td class="hi">0.862</td></tr>
+      <tr><td>Hop 域内</td><td>hop</td><td class="hi">0.975</td></tr>
+      <tr><td>Gitcoin 域内</td><td>gitcoin</td><td class="mid">0.634</td></tr>
+    </table>
+    <div class="fail-reason">跨协议 AUC 0.22-0.47：当时的结论是"协议间行为规律不通用"。但这个结论是错的，或者至少是不完整的，原因是特征集本身就不同，Blur 用的是 NFT 专属特征，Hop 用的是通用链上特征，根本没有可比性。我们把这个发现当成了实验结论，但实际上它反映的是特征不匹配，不是行为不通用。</div>
+    <div class="switch-reason">做实验 17：重新用公共特征集跑一遍 LOPO，排除特征不匹配的干扰，测试行为规律本身是否可迁移。</div>
+    <div class="paper-contrib">Section 4 跨协议分析：为实验 17 铺垫，说明旧结论需要修正。</div>
+  </div>
+  </details>
+
+  <details>
+  <summary>[17] 公共特征集 LOPO：零样本从 0.38 跳到 0.78 <span class="tag done">Done</span> <span class="tag">AUC 0.62-0.78</span></summary>
+  <div class="body">
+    <div class="why">这个实验为什么是大发现：</div>
+    对三个协议只用 5 个公共特征（tx_count、total_volume、unique_contracts、wallet_age_days、active_span_days），重新跑完整 LOPO。如果结果变好，说明之前的低 AUC 主要是特征问题，不是行为问题；如果还是很差，才能说协议间行为真的不通用。
+    <table>
+      <tr><th>训练</th><th>测试</th><th>旧 AUC（专属特征）</th><th>新 AUC（公共特征）</th><th>变化</th></tr>
+      <tr><td>hop + gitcoin</td><td>blur</td><td class="lo">0.220</td><td class="hi">0.624</td><td class="hi">+40%</td></tr>
+      <tr><td>blur + gitcoin</td><td>hop</td><td class="lo">0.376</td><td class="hi">0.780</td><td class="hi">+40%</td></tr>
+      <tr><td>blur + hop</td><td>gitcoin</td><td class="lo">0.466</td><td class="mid">0.468</td><td>持平</td></tr>
+    </table>
+    <div class="finding">Blur 和 Hop 之间的零样本迁移从 0.38 跳到 0.78，这是大幅提升。说明之前失败的主要原因是特征不匹配，不是行为本质不同。换了公共特征之后，Blur 和 Hop 的 sybil 行为有相当程度的共性，可以互相迁移。Gitcoin 还是持平（0.46），因为捐赠行为本身就和交易行为在不同维度，没有特征对得上。</div>
+    <div class="paper-contrib">Section 4 关键发现：这是论文里最重要的新发现之一，直接修正了 LOPO 实验的结论，对跨协议迁移的研究方向有重要意义。</div>
+  </div>
+  </details>
+
+  <details>
+  <summary>[18] Gitcoin 域内为什么只有 0.599：SADScore 定义的是链上异常，不是 Gitcoin 特定行为 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">为什么需要专门解释这个低数字：</div>
+    Gitcoin 域内 0.599，远低于 Blur 0.862 和 Hop 0.975。审稿人会质疑这是数据质量问题还是方法问题。必须给出具体解释。
+    <div class="fail-reason">Gitcoin 域内低的原因：Gitcoin 的 sybil 标签来自 SADScore，这个分数标注的是"链上行为总体异常的地址"，不是"专门刷 Gitcoin 捐赠的地址"。我们跑了特征重要性，发现 gitcoin_donations（捐赠次数）重要性是 0%，完全没有预测力。sybil 和正常用户在捐赠行为上几乎一样，都是捐几个项目；唯一的区分线索是基础链上指标（钱包年龄、交易频率），这些和批量新号有关，和 Gitcoin 机制本身没有关系。</div>
+    <div class="finding">Gitcoin 低 AUC 是数据标注定义问题，不是模型问题。在论文里会明确说明这个区别，并把 Gitcoin 作为"sybil 定义影响检测效果"的案例分析。</div>
+    <div class="paper-contrib">Section 5 讨论：Gitcoin 案例说明 sybil 定义对检测效果的影响，是方法泛化性讨论的重要组成部分。</div>
+    <img class="plot" src="data/gitcoin_shap.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+</details>
+
+<!-- ==================== Q8: 同类协议迁移会更好吗 ==================== -->
+<details>
+<summary class="q">同类协议之间迁移会更好吗？LayerZero 是同类桥接协议</summary>
+
+  <details>
+  <summary>[进行中] LayerZero 多链特征采集：29,849 个地址，ETH + ARB + POLY 三链 <span class="tag wip">WIP 8800/29849</span></summary>
+  <div class="body">
+    <div class="why">为什么选 LayerZero 和为什么只选三条链：</div>
+    Hop 是桥接协议，LayerZero 也是跨链桥接。如果 Hop 到 LayerZero 的迁移比 Blur 到 LayerZero 更好，就能说明"协议类型"是决定跨协议迁移效果的关键变量，这是比现在更强的结论。
+    <br><br>
+    最初计划采集 6 条链（ETH、ARB、POLY、OP、BSC、Base）。跑了样本之后发现 OP、BSC、Base 上 LayerZero 地址的活跃率为 0%，把这三条链删掉减少了约 2.5 倍的工时，而且不损失有效数据。
+    <div class="note" style="border-left-color: var(--yellow); background: var(--bg2); border-left: 3px solid var(--yellow); padding: 8px 14px; border-radius: 0 6px 6px 0; margin: 8px 0; font-size: 12.5px; color: var(--text);">当前进度：8,800 / 29,849 个地址完成，约 3 小时后全部完成。完成后写实验 24（LayerZero LOPO），加入思维导图。</div>
+    <div class="paper-contrib">Section 4 跨协议扩展：第四个协议数据集，让跨协议泛化的结论更普适。</div>
+  </div>
+  </details>
+
+</details>
+
+</details>
+
+</div>
+
+<!-- RIGHT: 论文章节对应 -->
+<div class="col-paper">
+<h2>论文章节对应</h2>
+
+<div class="paper-section">
+  <div class="ps-title">1. Introduction</div>
+  <div class="ps-body">提出问题：sybil 检测必须在空投前完成，ARTEMIS 是事后方案，无法预防。</div>
+  <div class="ps-exps"><span class="exp-pill">[02] 主结果对比</span></div>
+</div>
+
+<div class="paper-section">
+  <div class="ps-title">2. Background</div>
+  <div class="ps-body">Blur Season 2 积分机制；ARTEMIS 方法综述；sybil 分类文献。</div>
+  <div class="ps-exps"><span class="exp-pill">[11] 聚类</span><span class="exp-pill">[21] 类型</span></div>
+</div>
+
+<div class="paper-section">
+  <div class="ps-title">3. Method</div>
+  <div class="ps-body">时间截断特征提取；18 个行为特征设计；LightGBM 训练流程。</div>
+  <div class="ps-exps"><span class="exp-pill">[01] 特征工程</span><span class="exp-pill">[02] 训练</span></div>
+</div>
+
+<div class="paper-section">
+  <div class="ps-title">4. Experiments</div>
+  <div class="ps-body">主结果 / 时间消融 / 特征分析 / 泛化 / 跨协议。</div>
+  <div class="ps-exps">
+    <span class="exp-pill">[02] 主结果</span>
+    <span class="exp-pill">[03] 时间消融</span>
+    <span class="exp-pill">[12] 扩展消融</span>
+    <span class="exp-pill">[04] 特征重要性</span>
+    <span class="exp-pill">[06] 特征组消融</span>
+    <span class="exp-pill">[07] 图特征</span>
+    <span class="exp-pill">[08] 泛化</span>
+    <span class="exp-pill">[10] SHAP</span>
+    <span class="exp-pill">[14][16b] Blur→Hop</span>
+    <span class="exp-pill">[16] LOPO</span>
+    <span class="exp-pill">[17] 公共特征 LOPO</span>
+    <span class="exp-pill">[20] K 选择</span>
+    <span class="exp-pill">[21] 类型泛化</span>
+  </div>
+</div>
+
+<div class="paper-section">
+  <div class="ps-title">5. Discussion</div>
+  <div class="ps-body">GNN 事前失效的原因；Gitcoin 标注定义问题；逃避成本博弈；局限性。</div>
+  <div class="ps-exps">
+    <span class="exp-pill">[09][15] GNN 崩</span>
+    <span class="exp-pill">[18] Gitcoin 低</span>
+    <span class="exp-pill">[13][23] 对抗</span>
+    <span class="exp-pill">[22] 校准</span>
+  </div>
+</div>
+
+<div class="paper-section">
+  <div class="ps-title">6. Conclusion</div>
+  <div class="ps-body">主要结论汇总；LayerZero 第四协议；未来工作方向（多协议联合训练）。</div>
+  <div class="ps-exps"><span class="exp-pill">[LZ] LayerZero WIP</span><span class="exp-pill">[19] SHAP 时序</span></div>
+</div>
+
+<hr style="border: none; border-top: 1px solid var(--border); margin: 14px 0;">
+<h2>实验状态</h2>
+<div style="font-size: 12.5px; color: var(--text3); line-height: 2;">
+  <span class="tag done">Done</span> 01-23 全部完成<br>
+  <span class="tag wip">WIP</span> LayerZero 采集中 (8800/29849)<br>
+  <span class="tag blocked">Next</span> 实验 24 LayerZero LOPO<br>
+  <span class="tag blocked">Next</span> MINDMAP 加 19-23 图
+</div>
+
+</div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" src="">
+</div>
+
+<script>
+function setAll(open) {
+  document.querySelectorAll('details').forEach(d => d.open = open);
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', cur === 'light' ? '' : 'light');
+}
+function openLightbox(img) {
+  document.getElementById('lightbox-img').src = img.src;
+  document.getElementById('lightbox').classList.add('open');
+  event.stopPropagation();
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+
+function doSearch(q) {
+  q = q.trim().toLowerCase();
+  if (!q) {
+    document.querySelectorAll('details, .body, summary').forEach(el => {
+      el.classList.remove('search-hidden');
+    });
+    return;
+  }
+  document.querySelectorAll('details').forEach(det => {
+    const text = det.innerText.toLowerCase();
+    det.style.display = text.includes(q) ? '' : 'none';
+    if (text.includes(q)) det.open = true;
+  });
+}
+
+// Click outside lightbox
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLightbox();
+});
+</script>
 </body>
 </html>
