@@ -1,4 +1,5 @@
 model,auc,note
-ARTEMIS (paper),0.803,"post-hoc, WWW24"
-LightGBM T-30,0.9045,pre-airdrop 30d
-GNN (Artemis),0.9893575620900806,this run
+ARTEMIS (paper),0.803,"post-hoc GNN, WWW24"
+LightGBM T-30,0.9045,pre-airdrop behavioral
+LightGBM T-90,0.9014,"pre-airdrop, 90 days before"
+ArtemisNet (ours),0.9756,"post-hoc GNN, same data, 5-fold CV"
