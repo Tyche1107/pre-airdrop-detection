@@ -1,0 +1,7 @@
+train,test,auc,type
+hop+gitcoin,blur,0.2198430548146542,zero-shot
+blur+gitcoin,hop,0.3761463594689802,zero-shot
+blur+hop,gitcoin,0.4660118373163958,zero-shot
+blur_indomain,blur,0.8622654638017984,in-domain
+hop_indomain,hop,0.9751768027204426,in-domain
+gitcoin_indomain,gitcoin,0.6344873456731575,in-domain
