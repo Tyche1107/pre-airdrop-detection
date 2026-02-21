@@ -1,0 +1,5 @@
+experiment,auc
+Behavioral only,0.9039990296636233
+Graph only,0.8734506616016715
+Behavioral + Graph,0.9054564604865865
+ARTEMIS (post-hoc),0.803
