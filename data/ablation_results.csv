@@ -1,0 +1,7 @@
+group,features,n_features,auc
+ALL,"buy_count, sell_count, tx_count, total_trade_count, buy_value, sell_value, pnl_proxy, buy_collections, unique_interactions, sell_ratio, wallet_age_days, days_since_last_buy, recent_activity, blend_in_count, blend_out_count, blend_net_value, LP_count, ratio",18,0.9029
+A_Activity,"buy_count, sell_count, tx_count, total_trade_count",4,0.8627
+C_Diversity,"buy_collections, unique_interactions",2,0.8537
+D_Behavioral,"sell_ratio, wallet_age_days, days_since_last_buy, recent_activity",4,0.8479
+B_Volume,"buy_value, sell_value, pnl_proxy",3,0.8456
+E_DeFi,"blend_in_count, blend_out_count, blend_net_value, LP_count",4,0.5439
