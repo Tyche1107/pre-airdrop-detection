@@ -1,0 +1,6 @@
+model,auc,data,note
+ARTEMIS (paper),0.803,post-hoc,WWW24 reported
+"LightGBM (T-30, ours)",0.9045,pre-airdrop T-30,behavioral features
+"LightGBM (T-90, ours)",0.9014,pre-airdrop T-90,behavioral features
+ArtemisNet GNN (post-hoc),0.9756,post-hoc,"full graph, 5-fold CV"
+"ArtemisNet GNN (T-30, ours)",0.5857,pre-airdrop T-30,fair comparison
