@@ -1,0 +1,9 @@
+method,auc,precision,recall,f1
+LightGBM (ours),0.9052,0.5685,0.8051,0.6664
+Random Forest,0.8967,0.7413,0.5632,0.6401
+Logistic Regression,0.8587,0.5281,0.7307,0.6131
+Rule: high buy_count,0.6102,0.7269,0.2445,0.3659
+Rule: wallet_age < 30d,0.4916,0.1192,0.0181,0.0314
+Rule: single NFT type,0.3804,0.1031,0.1876,0.1331
+Rule: age<30 OR tx<10,0.3504,0.1478,0.5882,0.2362
+Rule: tx_count < 10,0.3501,0.1475,0.5858,0.2357
