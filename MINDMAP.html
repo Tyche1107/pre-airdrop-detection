@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Pre-Airdrop Detection 实验思维导图</title>
+<style>
+* { margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+svg.markmap { width: 100vw; height: 100vh; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/markmap-autoloader@0.16"></script>
+</head>
+<body>
+<div class="markmap">
+<script type="text/template">
+---
+markmap:
+  maxWidth: 380
+  colorFreezeLevel: 2
+  initialExpandLevel: 2
+---
+
+# ARTEMIS 只能事后识别，钱已被薅走
+
+## 能提前识别吗？
+
+### [01] 特征工程
+- 原始 TXS2：3.2M txns，251K 地址，BW/ML/FD/HF 标签
+- 按时间截断 → 18 个行为特征
+- 输出：nft_feats_T7 / T14 / T30 / T60 / T90.csv
+
+### [02] LightGBM 基准
+- 5-fold CV on T-30
+- **AUC 0.905 > ARTEMIS 0.803 ✅**
+- 简单模型 + 事前数据，效果更好
+
+## 能提前多久？
+
+### [03] 时间消融 T0 → T-90
+- T-0: 0.908 / T-7: 0.907 / T-14: 0.906
+- T-30: 0.905 / T-60: 0.904 / T-90: 0.902
+- **全程高于 ARTEMIS +10%，几乎不掉**
+
+### [12] 扩展消融 T-120 → T-180
+- T-120: 0.899 / T-150: 0.898 / T-180: 0.895
+- **信号 6 个月前仍存在，曲线平滑衰减**
+
+## 为什么这么早就能识别？
+
+### [04] 特征重要性跨时间窗
+- buy_collections：T-0=48% → T-90=38%（稳定第一）
+- unique_interactions：T-0=7% → T-90=22%（越早越重要）
+- **越早，"互动广度"比"交易量"更能区分猎人**
+
+### [10] SHAP 分析
+- buy_collections = 最强正向信号
+- 低 wallet_age = 批量新号特征
+- 各特征贡献方向一致，可解释性强
+
+## 所有特征都必要吗？
+
+### [06] 特征组消融（5 组分别拿掉）
+- Activity（交易量）：0.863
+- Diversity（NFT 多样性）：0.854 → **单组即超 ARTEMIS**
+- Behavioral（行为模式）：0.848
+- Volume（金额）：0.846
+- DeFi（Blend 协议）：0.544 → **几乎无用**
+
+## 复杂图模型更好吗？
+
+### [07] 图特征增强
+- 行为特征 only：0.904
+- 图特征 only：0.873
+- 行为 + 图：0.905
+- **图信息边际贡献 +0.001，行为特征已够**
+
+### [09] ArtemisNet GNN 复现（事后）
+- AUC **0.976**（5-fold，比论文 0.803 更严格）
+
+### [15] ArtemisNet GNN 事前（T-30）
+- AUC **0.586（崩了）**
+- GNN 依赖空投后 transfer 行为，事前无法使用
+
+## 模型是真泛化还是记忆噪声？
+
+### [08] 泛化实验
+- 时间泛化（T-90 训 → T-30 测）：**0.898（仅降 0.006）✅**
+- 种群泛化（50% 未见 sybil 类型）：**0.744 ✅**
+
+### [05] 阈值 / Precision-Recall 分析
+- threshold=0.10：precision=0.31，recall=0.98
+- threshold=0.50：F1 最优
+- **实际部署可按需调精度 / 召回权衡**
+
+### [11] Sybil 内部聚类（K-Means）
+- 类型 1：散户猎人（49,039 个）— 少量交易，小金额
+- 类型 2：中量猎人（601 个）— 794 次买入，75 个 NFT 系列
+- 类型 3：超级机器人（6 个）— 9099 次买入，4248 次 Blend 操作
+
+### [13] 对抗鲁棒性
+- Diversity -50%：AUC 0.883
+- Diversity -80%：AUC 0.869
+- 完全模仿正常用户：AUC 0.862
+- **关键：降 diversity = 降积分，猎人无法两全**
+
+## 能推广到其他协议吗？
+
+### [14] Blur → Hop 跨协议初探
+- 零样本：AUC 0.726
+- 10% 微调：AUC 0.965
+
+### [16b] Blur-Hop 数据效率精细测试
+- 零样本：0.500（随机）
+- **1% 微调：0.981 ✅**
+- 5% / 10% / 20%：均 ~0.981（边际收益为零）
+- **1% 标注就够，数据效率极高**
+
+## 为什么零样本差？
+
+### [16] 三协议 LOPO（Blur / Hop / Gitcoin）
+- hop+gitcoin → blur：0.220 ❌
+- blur+gitcoin → hop：0.376 ❌
+- blur+hop → gitcoin：0.466 ❌
+- Blur 域内：0.862 / Hop 域内：0.975
+- **Gitcoin 域内：0.634**（捐赠行为 ≠ NFT 交易，特征体系不同）
+
+## 同类协议迁移会更好吗？
+
+### [进行中] LayerZero 多链（ETH / ARB / POLY）
+- 29,849 地址，后台抓取中（~3h）
+- 假设：Hop→LZ > Blur→LZ（同类桥接协议）
+- 若成立 → **协议类型是跨协议迁移的关键变量**
+</script>
+</div>
+</body>
+</html>
