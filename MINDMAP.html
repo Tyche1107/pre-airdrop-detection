@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<title>Pre-Airdrop Detection 实验思维导图</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    padding: 24px 32px;
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 20px;
+    color: #a78bfa;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #2d3748;
+    padding-bottom: 12px;
+  }
+  details {
+    margin: 6px 0;
+    border-left: 2px solid #4a5568;
+    padding-left: 16px;
+  }
+  details[open] > summary { color: #a78bfa; }
+  summary {
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    color: #cbd5e0;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+  }
+  summary:hover { background: #1e2435; }
+  summary::before {
+    content: '▶';
+    font-size: 10px;
+    color: #718096;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  details[open] > summary::before { transform: rotate(90deg); }
+  .leaf {
+    padding: 4px 8px 4px 24px;
+    color: #94a3b8;
+    font-size: 14px;
+  }
+  .leaf strong { color: #68d391; }
+  .leaf .bad { color: #fc8181; }
+  .result-box {
+    background: #1a202c;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 8px 0 8px 24px;
+    font-size: 13px;
+  }
+  .result-box table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 6px;
+  }
+  .result-box th {
+    color: #a78bfa;
+    text-align: left;
+    padding: 4px 12px 4px 0;
+    font-size: 12px;
+    border-bottom: 1px solid #2d3748;
+  }
+  .result-box td {
+    padding: 4px 12px 4px 0;
+    color: #cbd5e0;
+    font-size: 13px;
+  }
+  .result-box td.highlight { color: #68d391; font-weight: 600; }
+  .result-box td.lowlight  { color: #fc8181; }
+  img.plot {
+    width: 100%;
+    max-width: 860px;
+    border-radius: 8px;
+    margin: 10px 0 4px 24px;
+    display: block;
+    border: 1px solid #2d3748;
+  }
+  .tag {
+    font-size: 11px;
+    background: #2d3748;
+    color: #a0aec0;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-weight: normal;
+    margin-left: 4px;
+  }
+  .tag.wip { background: #744210; color: #fbd38d; }
+  .divider { border: none; border-top: 1px solid #2d3748; margin: 16px 0; }
+  .q { color: #f6e05e; font-size: 15px; }
+</style>
+</head>
+<body>
+<h1>🧠 Pre-Airdrop Sybil Detection — 实验思维导图</h1>
+
+<!-- ROOT PROBLEM -->
+<details open>
+<summary class="q">ARTEMIS 只能事后识别，钱已被薅走</summary>
+
+  <!-- Q1 -->
+  <details open>
+  <summary class="q">能提前识别吗？</summary>
+
+    <details>
+    <summary>[01] 特征工程 <span class="tag">build_features</span></summary>
+    <div class="leaf">
+      原始 TXS2：3.2M txns，251K 地址，BW/ML/FD/HF 标签<br>
+      按各截断点时间截断 → 18 个行为特征<br>
+      输出：nft_feats_T7 / T14 / T30 / T60 / T90.csv
+    </div>
+    </details>
+
+    <details>
+    <summary>[02] LightGBM 基准 <span class="tag">train_lightgbm</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>模型</th><th>数据</th><th>AUC</th></tr>
+        <tr><td>ARTEMIS（论文）</td><td>事后</td><td class="lowlight">0.803</td></tr>
+        <tr><td>LightGBM T-30（我们）</td><td>事前</td><td class="highlight">0.905 ✅</td></tr>
+        <tr><td>LightGBM T-90（我们）</td><td>事前</td><td class="highlight">0.902 ✅</td></tr>
+        <tr><td>ArtemisNet GNN（我们复现，事后）</td><td>事后</td><td>0.976</td></tr>
+        <tr><td>ArtemisNet GNN（我们，T-30 事前）</td><td>事前</td><td class="lowlight">0.586 ❌</td></tr>
+      </table>
+    </div>
+    <img class="plot" src="data/model_comparison_plot.png" alt="model comparison">
+    </details>
+
+  </details>
+
+  <!-- Q2 -->
+  <details open>
+  <summary class="q">能提前多久？</summary>
+
+    <details>
+    <summary>[03] 时间消融 T0 → T-90 <span class="tag">temporal_ablation</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>时间窗</th><th>提前天数</th><th>AUC</th><th>F1</th></tr>
+        <tr><td>T-0</td><td>0</td><td class="highlight">0.908</td><td>0.682</td></tr>
+        <tr><td>T-7</td><td>7</td><td class="highlight">0.907</td><td>0.683</td></tr>
+        <tr><td>T-14</td><td>14</td><td class="highlight">0.906</td><td>0.683</td></tr>
+        <tr><td>T-30</td><td>30</td><td class="highlight">0.905</td><td>0.683</td></tr>
+        <tr><td>T-60</td><td>60</td><td class="highlight">0.904</td><td>0.683</td></tr>
+        <tr><td>T-90</td><td>90</td><td class="highlight">0.902</td><td>0.684</td></tr>
+      </table>
+    </div>
+    <img class="plot" src="data/temporal_ablation_plot.png" alt="temporal ablation">
+    </details>
+
+    <details>
+    <summary>[12] 扩展消融 T-120 → T-180 <span class="tag">extended_temporal</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>时间窗</th><th>AUC</th></tr>
+        <tr><td>T-120</td><td class="highlight">0.899</td></tr>
+        <tr><td>T-150</td><td class="highlight">0.898</td></tr>
+        <tr><td>T-180</td><td class="highlight">0.895</td></tr>
+      </table>
+      <div style="margin-top:8px;color:#68d391">信号 6 个月前仍存在，曲线平滑衰减</div>
+    </div>
+    <img class="plot" src="data/temporal_ablation_extended_plot.png" alt="extended temporal">
+    </details>
+
+  </details>
+
+  <!-- Q3 -->
+  <details>
+  <summary class="q">为什么这么早就能识别？</summary>
+
+    <details>
+    <summary>[04] 特征重要性跨时间窗 <span class="tag">feature_importance</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>特征</th><th>T-0</th><th>T-30</th><th>T-60</th><th>T-90</th></tr>
+        <tr><td>buy_collections（NFT多样性）</td><td class="highlight">48%</td><td>44%</td><td>42%</td><td>38%</td></tr>
+        <tr><td>unique_interactions</td><td>7%</td><td>14%</td><td>18%</td><td class="highlight">22%</td></tr>
+        <tr><td>buy_value（买入金额）</td><td>12%</td><td>12%</td><td>12%</td><td>12%</td></tr>
+        <tr><td>tx_count（总交易数）</td><td>5%</td><td>6%</td><td>6%</td><td>6%</td></tr>
+      </table>
+      <div style="margin-top:8px;color:#f6e05e">越早，"互动广度"比"交易量"更重要</div>
+    </div>
+    <img class="plot" src="data/feature_stability_plot.png" alt="feature stability">
+    <img class="plot" src="data/feature_importance_plot.png" alt="feature importance">
+    </details>
+
+    <details>
+    <summary>[10] SHAP 分析 <span class="tag">shap_analysis</span></summary>
+    <div class="leaf">
+      buy_collections = 最强正向信号<br>
+      低 wallet_age = 批量新号特征<br>
+      各特征贡献方向一致，可解释性强
+    </div>
+    <img class="plot" src="data/shap_beeswarm.png" alt="shap beeswarm">
+    <img class="plot" src="data/shap_plot.png" alt="shap">
+    </details>
+
+    <details>
+    <summary>[06] 特征组消融（5 组）<span class="tag">ablation_features</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>组</th><th>AUC</th><th>说明</th></tr>
+        <tr><td>Activity（交易量）</td><td class="highlight">0.863</td><td>最强</td></tr>
+        <tr><td>Diversity（NFT多样性）</td><td class="highlight">0.854</td><td>单组即超ARTEMIS</td></tr>
+        <tr><td>Behavioral（行为模式）</td><td>0.848</td><td></td></tr>
+        <tr><td>Volume（金额）</td><td>0.846</td><td></td></tr>
+        <tr><td>DeFi（Blend协议）</td><td class="lowlight">0.544</td><td>几乎无用</td></tr>
+      </table>
+    </div>
+    <img class="plot" src="data/ablation_plot.png" alt="ablation">
+    </details>
+
+  </details>
+
+  <!-- Q4 -->
+  <details>
+  <summary class="q">复杂图模型更好吗？</summary>
+
+    <details>
+    <summary>[07] 图特征增强 <span class="tag">graph_features</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>实验</th><th>AUC</th></tr>
+        <tr><td>行为特征 only</td><td>0.904</td></tr>
+        <tr><td>图特征 only</td><td>0.873</td></tr>
+        <tr><td>行为 + 图</td><td class="highlight">0.905</td></tr>
+        <tr><td>ARTEMIS（事后 GNN）</td><td class="lowlight">0.803</td></tr>
+      </table>
+      <div style="margin-top:8px;color:#94a3b8">图信息边际贡献 +0.001，行为特征已够</div>
+    </div>
+    <img class="plot" src="data/graph_augmentation_plot.png" alt="graph augmentation">
+    </details>
+
+    <details>
+    <summary>[09][15] GNN 事后 vs 事前 <span class="tag">artemis_gnn + gnn_preairdrop</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>模型</th><th>数据</th><th>AUC</th></tr>
+        <tr><td>ArtemisNet GNN（我们复现）</td><td>事后</td><td class="highlight">0.976</td></tr>
+        <tr><td>ArtemisNet GNN（我们，T-30）</td><td>事前</td><td class="lowlight">0.586 ❌ 崩了</td></tr>
+      </table>
+      <div style="margin-top:8px;color:#f6e05e">GNN 依赖空投后 transfer 行为，事前无效</div>
+    </div>
+    </details>
+
+  </details>
+
+  <!-- Q5 -->
+  <details>
+  <summary class="q">模型是真泛化还是记忆噪声？</summary>
+
+    <details>
+    <summary>[08] 泛化实验 <span class="tag">generalization</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>实验</th><th>AUC</th></tr>
+        <tr><td>标准 5-fold CV (T-30)</td><td class="highlight">0.904</td></tr>
+        <tr><td>时间泛化（T-90训 → T-30测）</td><td class="highlight">0.898 ✅（仅降0.006）</td></tr>
+        <tr><td>种群泛化（50%未见sybil类型）</td><td>0.744 ✅</td></tr>
+      </table>
+    </div>
+    <img class="plot" src="data/generalization_plot.png" alt="generalization">
+    </details>
+
+    <details>
+    <summary>[05] 阈值 / Precision-Recall 分析 <span class="tag">pr_analysis</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>Threshold</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
+        <tr><td>0.10</td><td class="lowlight">0.31</td><td class="highlight">0.98</td><td>0.47</td></tr>
+        <tr><td>0.20</td><td>0.38</td><td>0.95</td><td>0.54</td></tr>
+        <tr><td>0.30</td><td>0.43</td><td>0.92</td><td>0.59</td></tr>
+        <tr><td>0.50</td><td colspan="2">F1 最优</td><td class="highlight">—</td></tr>
+      </table>
+    </div>
+    <img class="plot" src="data/pr_and_comparison_plot.png" alt="pr">
+    <img class="plot" src="data/precision_recall_threshold.png" alt="threshold">
+    </details>
+
+    <details>
+    <summary>[11] Sybil 内部聚类 <span class="tag">sybil_clustering</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>类型</th><th>数量</th><th>买入次数</th><th>NFT系列数</th><th>Blend操作</th></tr>
+        <tr><td>散户猎人</td><td>49,039</td><td>8</td><td>4</td><td>0</td></tr>
+        <tr><td>中量猎人</td><td>601</td><td>794</td><td>75</td><td>0</td></tr>
+        <tr><td class="highlight">超级机器人</td><td>6</td><td class="highlight">9,099</td><td>63</td><td class="highlight">4,248</td></tr>
+      </table>
+    </div>
+    <img class="plot" src="data/sybil_clustering_plot.png" alt="clustering">
+    </details>
+
+    <details>
+    <summary>[13] 对抗鲁棒性 <span class="tag">adversarial_robustness</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>场景</th><th>AUC</th></tr>
+        <tr><td>正常 Sybil（baseline）</td><td class="highlight">0.904</td></tr>
+        <tr><td>Diversity -50%</td><td>0.883</td></tr>
+        <tr><td>Diversity -80%</td><td>0.869</td></tr>
+        <tr><td>完全模仿正常用户</td><td>0.862</td></tr>
+      </table>
+      <div style="margin-top:8px;color:#f6e05e">降 diversity = 降积分，猎人无法两全，自我矛盾</div>
+    </div>
+    <img class="plot" src="data/adversarial_plot.png" alt="adversarial">
+    </details>
+
+  </details>
+
+  <!-- Q6 -->
+  <details>
+  <summary class="q">能推广到其他协议吗？</summary>
+
+    <details>
+    <summary>[14] Blur → Hop 跨协议初探 <span class="tag">cross_protocol</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>实验</th><th>AUC</th></tr>
+        <tr><td>Blur 域内（通用特征）</td><td>0.887</td></tr>
+        <tr><td>Hop 域内</td><td>0.978</td></tr>
+        <tr><td>Zero-shot（Blur→Hop）</td><td class="lowlight">0.726</td></tr>
+        <tr><td>10% Hop 标注微调</td><td class="highlight">0.965 ✅</td></tr>
+      </table>
+    </div>
+    <img class="plot" src="data/cross_protocol_plot.png" alt="cross protocol">
+    </details>
+
+    <details>
+    <summary>[16b] Blur-Hop 数据效率精细测试 <span class="tag">lopo_blur_hop</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>训练数据</th><th>AUC</th><th>P@1000</th></tr>
+        <tr><td>Blur only（zero-shot）</td><td class="lowlight">0.500</td><td>0.055</td></tr>
+        <tr><td>hop→blur zero-shot</td><td>0.674</td><td class="highlight">1.000</td></tr>
+        <tr><td>Blur + 1% Hop</td><td class="highlight">0.982 ✅</td><td>0.958</td></tr>
+        <tr><td>Blur + 5% Hop</td><td class="highlight">0.982</td><td>0.950</td></tr>
+        <tr><td>Blur + 10% Hop</td><td class="highlight">0.982</td><td>0.965</td></tr>
+        <tr><td>Blur + 20% Hop</td><td class="highlight">0.981</td><td>0.955</td></tr>
+      </table>
+      <div style="margin-top:8px;color:#68d391">1% 标注就够，数据效率极高</div>
+    </div>
+    </details>
+
+  </details>
+
+  <!-- Q7 -->
+  <details>
+  <summary class="q">为什么零样本差？协议间规律不同？</summary>
+
+    <details>
+    <summary>[16] 三协议 LOPO（Blur / Hop / Gitcoin）<span class="tag">lopo_crossprotocol</span></summary>
+    <div class="result-box">
+      <table>
+        <tr><th>训练</th><th>测试</th><th>AUC</th><th>类型</th></tr>
+        <tr><td>hop+gitcoin</td><td>blur</td><td class="lowlight">0.220 ❌</td><td>zero-shot</td></tr>
+        <tr><td>blur+gitcoin</td><td>hop</td><td class="lowlight">0.376 ❌</td><td>zero-shot</td></tr>
+        <tr><td>blur+hop</td><td>gitcoin</td><td class="lowlight">0.466 ❌</td><td>zero-shot</td></tr>
+        <tr><td>Blur 域内</td><td>blur</td><td>0.862</td><td>in-domain</td></tr>
+        <tr><td>Hop 域内</td><td>hop</td><td class="highlight">0.975</td><td>in-domain</td></tr>
+        <tr><td>Gitcoin 域内</td><td>gitcoin</td><td>0.634</td><td>in-domain</td></tr>
+      </table>
+      <div style="margin-top:8px;color:#f6e05e">Gitcoin 域内低 → 捐赠行为 ≠ NFT/桥接，特征体系完全不同</div>
+    </div>
+    </details>
+
+  </details>
+
+  <!-- Q8 -->
+  <details>
+  <summary class="q">同类协议迁移会更好吗？</summary>
+
+    <details>
+    <summary>[进行中] LayerZero 多链（ETH / ARB / POLY）<span class="tag wip">WIP</span></summary>
+    <div class="leaf">
+      29,849 地址，后台抓取中（~3h）<br>
+      <strong>假设：Hop→LZ > Blur→LZ（同类桥接协议）</strong><br>
+      若成立 → 协议类型是跨协议迁移的关键变量
+    </div>
+    </details>
+
+  </details>
+
+</details>
+
+</body>
+</html>

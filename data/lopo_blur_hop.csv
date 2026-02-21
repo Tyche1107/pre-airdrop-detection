@@ -1,0 +1,9 @@
+train,test,auc,p_at_1000,type
+blur,hop,0.5,0.055,zero-shot
+hop,blur,0.6742346333359702,1.0,zero-shot
+blur+hop1pct,hop,0.9818840709193248,0.958,fine-tune
+blur+hop5pct,hop,0.9818146284128094,0.95,fine-tune
+blur+hop10pct,hop,0.9816134125778675,0.965,fine-tune
+blur+hop20pct,hop,0.9810362174285965,0.955,fine-tune
+blur_indomain,blur,0.8622654638017984,1.0,in-domain
+hop_indomain,hop,0.9751768027204426,0.868,in-domain
