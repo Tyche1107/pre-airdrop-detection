@@ -43,10 +43,6 @@
   .subtitle { font-size: 12.5px; color: var(--text4); margin-bottom: 10px; }
 
   /* Top card */
-  .topcard { background: var(--bg2); border: 1px solid var(--border2); border-radius: 10px; padding: 14px 20px; margin-bottom: 14px; display: flex; gap: 28px; flex-wrap: wrap; }
-  .metric { display: flex; flex-direction: column; }
-  .metric .val { font-size: 21px; font-weight: 700; color: var(--green); }
-  .metric .lab { font-size: 11.5px; color: var(--text4); margin-top: 2px; }
 
   /* Controls */
   .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
@@ -124,13 +120,6 @@
 <h1>Pre-Airdrop Sybil Detection — 实验全景</h1>
 <div class="subtitle">23 个实验 / Blur Season 2 NFT 空投 / 对比基准 ARTEMIS WWW'24 / 最后更新 2026-02-21</div>
 
-<div class="topcard">
-  <div class="metric"><span class="val">0.905</span><span class="lab">T-30 AUC (提前1个月)</span></div>
-  <div class="metric"><span class="val">+10.2%</span><span class="lab">vs ARTEMIS 0.803</span></div>
-  <div class="metric"><span class="val">0.895</span><span class="lab">T-180 AUC (提前6个月)</span></div>
-  <div class="metric"><span class="val">0.982</span><span class="lab">1% 微调后跨协议 AUC (Blur→Hop)</span></div>
-  <div class="metric"><span class="val">0.780</span><span class="lab">公共特征集零样本迁移</span></div>
-</div>
 
 <div class="controls">
   <input id="searchbox" type="text" placeholder="搜索实验、结论、特征名..." oninput="doSearch(this.value)">
