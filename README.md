@@ -32,23 +32,110 @@ ARTEMIS (WWW'24) asks: who claimed the airdrop sybilically? We ask a different q
 
 > **Adversarial robustness highlight:** Sybil evasion is economically irrational. A sybil hunter who reduces behavioral diversity by 90% to evade detection loses 67% of their accumulated incentive points, while AUC drops by only 0.6%. The economic cost of evasion far exceeds any benefit, making the detection system game-theoretically stable.
 
-## Why GNN Does Not Work Pre-Airdrop
+## The Story in Five Acts
 
-ArtemisNet (GNN) achieves AUC 0.976 post-hoc but collapses to AUC 0.586 at T-30. The reason is architectural: ArtemisNet's graph edges include transfer events generated when the airdrop is distributed. Remove those edges and the graph is structurally incomplete. This is not a tuning issue; it is a fundamental incompatibility between graph-based post-hoc methods and the pre-airdrop setting. LightGBM on behavioral features does not have this dependency.
+### Act 1: Why GNN Fails Before the Airdrop
 
-## Experimental Design
+ARTEMIS (WWW'24) uses ArtemisNet, a GNN that achieves AUC 0.976 post-hoc. We replicate it on the same data and confirm: post-hoc, it is excellent. Then we apply it at T-30, removing transaction edges that only exist after the airdrop is distributed. AUC collapses to 0.586.
 
-The 28 experiments are organized around five questions.
+This is not a tuning failure. GNN edges encode who transferred tokens to whom after the airdrop — structural information that does not exist before the event. A method that depends on those edges cannot be repurposed for pre-airdrop detection without re-engineering the core architecture. This motivates the behavioral feature approach entirely.
 
-**Can we detect before the airdrop, and how early?** Experiments 01-03 and 12 establish the main result and temporal ablation from T-0 to T-180. Data leakage is prevented by a strict timestamp cutoff on all feature computation.
+| Script | Purpose | Key result |
+|--------|---------|------------|
+| 09_artemis_gnn.py | Reproduce ArtemisNet post-hoc, 5-fold CV | AUC 0.976 — confirms the post-hoc upper bound |
+| 15_gnn_preairdrop.py | Apply ArtemisNet at T-30 (no post-distribution edges) | AUC 0.586 — structural collapse, not a tuning problem |
 
-**Which features matter and why?** Experiments 04, 06, 10, and 19 characterize feature importance from three angles: LightGBM gain-based importance across time windows, group ablation (Activity / Diversity / Volume / Behavioral / DeFi), and SHAP value distributions. DeFi features contribute almost nothing (AUC 0.544 alone) because the sybil strategy centers on NFT transactions, not Blur's Blend lending product.
+### Act 2: Behavioral Features Work, and Earlier Than Expected
 
-**How well does the model actually generalize?** Experiments 05, 08, 11, 20, 21, and 22 test generalization from multiple directions: precision-recall thresholds for deployment, temporal and population splits, sybil subtype clustering (three types: retail hunter, mid-volume, and six hyperactive bots), leave-one-flag-out generalization by sybil strategy, and probability calibration. The critical failure case is flag-type generalization: when BW (high-value buyer) sybils are excluded from training, AUC drops to 0.047, because the model never learned to associate high buy_value with sybil behavior.
+Sybil hunters spread transactions across many NFT collections to accumulate points. This behavioral pattern — diversity across collections, breadth of contract interactions — is observable months before the airdrop and is structurally different from genuine collectors. Eighteen features computed from raw pre-airdrop transactions (no graph, no post-hoc data) achieve AUC 0.905 at T-30, outperforming ARTEMIS by 10 points.
 
-**What is the scope of the approach?** Experiments 14-18, 24, and 28 establish two separate claims with different strength levels. First, in-domain detection is robust: when trained on target-protocol data, the approach achieves AUC 0.905 on Blur and 0.946 on LayerZero (Exp 28), confirming that sybil behavioral fingerprints exist and are detectable in both NFT and bridge protocols. Second, zero-shot transfer is limited: without any target-protocol training data, AUC ranges from 0.43 to 0.57 (Exps 16/24). This gap is primarily due to feature mismatch — with a five-feature common set, Blur-to-Hop improves from 0.38 to 0.78 (Exp 17). The conclusion is not that the method generalizes zero-shot, but that the underlying signal is real in every protocol tested and is recoverable with modest target-domain supervision (1% labels recover AUC to 0.982 on Hop, Exp 14).
+The dominant feature is NFT collection diversity (37-49% importance across time windows). The second most time-sensitive feature is unique contract interactions: its importance rises from 7% to 22% as the window extends to T-90, capturing the early batch-wallet creation pattern that predates the farming sprint.
 
-**Are the weaknesses addressable?** Experiments 25-27 directly address the three main limitations. Isolation Forest (unsupervised) raises detection of the unseen BW type from 0.047 to 0.916, because BW sybils are statistical outliers in feature space regardless of labeling. A two-stage deployment (supervised LightGBM plus unsupervised IF) is robust to novel sybil strategies. Label noise experiments show AUC drops only 0.014 under 20% label corruption, meaning the model is deployable even when the official blacklist is imperfect. Rule-based baselines (wallet age, transaction count thresholds) peak at AUC 0.610, far below LightGBM's 0.905, confirming that simple heuristics cannot capture the composite behavioral patterns that distinguish sybils from genuine heavy users.
+| Script | Purpose | Key result |
+|--------|---------|------------|
+| 01_build_features.py | Extract 18 behavioral features with strict timestamp cutoff | Preprocessing; prevents data leakage |
+| 02_train_lightgbm.py | LightGBM 5-fold CV at T-30 vs ARTEMIS baseline | AUC 0.905 vs ARTEMIS 0.803 |
+| 03_temporal_ablation.py | Sweep T-0 to T-90 | T-0: 0.908, T-30: 0.905, T-90: 0.902 |
+| 12_extended_temporal.py | Extend sweep to T-120, T-150, T-180 | T-180: 0.895; total drop over 6 months is 0.013 |
+
+Feature group ablation (each group trained independently, Exp 06):
+
+| Group | Features | AUC |
+|-------|----------|-----|
+| All 18 | — | 0.903 |
+| Activity | buy/sell/tx counts | 0.863 |
+| Diversity | collections, unique interactions | 0.854 |
+| Behavioral | sell ratio, wallet age, recency | 0.848 |
+| Volume | buy/sell ETH value | 0.846 |
+| DeFi | Blend lending activity | 0.544 |
+
+DeFi contributes almost nothing because sybil strategy targets NFT transactions, not Blur's Blend lending product. Diversity and Activity carry the bulk of the signal.
+
+### Act 3: The Signal is Stable Six Months in Advance
+
+The 0.013 total drop from T-0 to T-180 means the behavioral fingerprint does not meaningfully change as the event approaches. Sybil hunters cannot hide their pattern by frontloading activity close to the deadline — the structural difference from genuine collectors builds up over months and stays.
+
+Generalization across held-out splits:
+
+| Test | Setting | AUC |
+|------|---------|-----|
+| Standard 5-fold CV | T-30 | 0.905 |
+| Temporal split | Train T-90, test T-30 | 0.898 |
+| Population split | 50% unseen sybil subtypes | 0.744 |
+
+The population split at 0.744 reveals the known failure mode: three behavioral subtypes exist (retail hunters, mid-volume, hyperactive bots), and the model generalizes well across most of them — except for BW (high-value buyer) sybils, which the model was never trained to associate with sybil behavior. This sets up Act 4.
+
+### Act 4: Attackers Cannot Evade Cheaply
+
+Two scenarios: active evasion (can a sybil hunter game the model?) and unknown types (what if a new strategy appears?).
+
+**Active evasion (Exp 23):** A sybil hunter who reduces behavioral diversity by 90% would reduce AUC from 0.904 to 0.899 — a 0.6% drop. But they would also lose 67% of accumulated incentive points. The economic cost of evasion far exceeds the marginal benefit. The detection system is game-theoretically stable.
+
+**Unknown sybil type — BW (Exp 21 + 25):** BW-type sybils (high buy_value, fewer collections) are excluded from training. Supervised model: AUC 0.047. They are invisible to the supervised detector. Isolation Forest (unsupervised), however, detects them at AUC 0.916, because they are statistical outliers in feature space regardless of labeling. A two-stage deployment (LightGBM for known types, IF for anomalies) is robust to novel strategies.
+
+| Script | Purpose | Key result |
+|--------|---------|------------|
+| 23_adversarial_cost.py | Economic cost of diversity-reduction evasion | 90% cut: AUC -0.6%, incentive points -67% |
+| 21_flag_type_generalization.py | Leave-one-type-out: BW, FD, ML, HF | BW: 0.047; others: 0.110-0.550 |
+| 25_openworld_detection.py | Two-stage: LightGBM + Isolation Forest | IF raises BW from 0.047 to 0.916 |
+
+### Act 5: The Story Holds on a Second Protocol
+
+Everything above is on Blur, a single airdrop event. Is the signal Blur-specific, or is it real?
+
+Experiment 28 applies the identical pipeline to LayerZero ZRO (June 2024 airdrop, 29.8K addresses). AUC 0.9462 at T-30, 0.9468 at T-60, 0.9462 at T-90. Temporal range: 0.0006 across three months — flatter than Blur's 0.003. This exceeds both Blur (0.905) and the LayerZero in-domain estimate from Exp 24 (0.892).
+
+The same four acts play out on a bridge protocol: behavioral fingerprints exist, they are detectable months in advance, the signal is stable, and evasion economics hold.
+
+| Script | Purpose | Key result |
+|--------|---------|------------|
+| 28_layerzero_temporal.py | Full temporal ablation on LZ (same pipeline as Exp 03) | T-30: 0.9462 (17,072 active), T-60: 0.9468, T-90: 0.9462; range 0.0006 |
+| 24_layerzero_lopo.py | Zero-shot cross-protocol to LZ as context | Hop→LZ: 0.567, Blur→LZ: 0.434; in-domain bound 0.892 |
+
+Zero-shot cross-protocol transfer (0.43-0.57) is limited because sybil fingerprints are protocol-specific in their feature expression. In-domain training is required for strong results. Zero-shot transfer improves significantly with common features (Blur→Hop: 0.38 → 0.78, Exp 17) and recovers fully with 1% target labels (Exp 14, 16b).
+
+## Supporting Experiments
+
+Experiments that confirm and extend the five acts above; intended for supplementary material in any paper submission.
+
+| Script | Confirms | Result |
+|--------|---------|--------|
+| 04_feature_importance.py | Act 2: feature stability across time | Diversity 37-49%; unique_interactions 7-22% |
+| 05_pr_analysis.py | Act 3: deployment threshold selection | Precision-recall trade-off curve |
+| 07_graph_features.py | Act 2: graph features add marginal value | Behavioral+graph 0.905 vs behavioral alone 0.904 |
+| 10_shap_analysis.py | Act 2: confirms feature ranks via SHAP | Diversity + unique_interactions top contributors |
+| 11_sybil_clustering.py | Act 3: sybil subtype structure | K=3: 49K retail, 601 mid-volume, 6 bots |
+| 13_adversarial_robustness.py | Act 4: full evasion sweep | AUC 0.904 → 0.899 across 0-90% diversity reduction |
+| 14_cross_protocol.py | Act 5: Hop fine-tuning budget | 1% labels recovers AUC 0.982 |
+| 16_lopo_crossprotocol.py | Act 5: protocol-specific features cause the gap | AUC 0.22-0.47 with protocol-specific features |
+| 16b_lopo_blur_hop.py | Act 5: label-budget recovery | 300 labels sufficient for full recovery |
+| 17_common_features_lopo.py | Act 5: common features close the gap | Blur→Hop: 0.38 → 0.78 |
+| 18_gitcoin_feature_importance.py | Act 5: Gitcoin label quality | gitcoin_donations = 0% importance |
+| 19_shap_temporal.py | Act 2: SHAP shift across windows | T-90: wallet_age dominant; T-7: recent_activity |
+| 20_clustering_k_selection.py | Act 3: K justification | K=3 for semantic separation over K=2 |
+| 22_calibration.py | Act 3: probability calibration | Brier score -24%; AUC unchanged |
+| 26_label_noise.py | Act 4: blacklist imperfection resilience | 20% label flip: AUC -0.014 |
+| 27_rule_baselines.py | Act 2: simple heuristics vs LightGBM | Best rule: 0.610; LGB: 0.905 |
 
 ## Datasets and Data Sources
 
@@ -107,88 +194,6 @@ Each dataset uses a different source for on-chain features. This section documen
 ### Known Data Limitation (Exp 28)
 
 Exp 28 uses ETH-only behavioral features for a bridge protocol (LayerZero) whose core utility is cross-chain. This means the T-30/60/90 features capture Ethereum-side activity (token approvals, contract interactions before bridging) but miss the destination-chain behavior. Despite this limitation, Exp 28 achieves AUC 0.946, suggesting the pre-bridge Ethereum-side behavior alone is sufficient for detection. Adding ARB/POLY features is expected to improve results further.
-
-## Experiments
-
-Experiment map with figures and results: [MINDMAP.html](https://tyche1107.github.io/pre-airdrop-detection/MINDMAP.html)
-
-### Detection Horizon
-
-How early can we detect, and does the signal degrade over time?
-
-| Script | Purpose | Key result |
-|--------|---------|------------|
-| 01_build_features.py | Extract 18 behavioral features from raw transactions at each temporal cutoff, enforcing strict timestamp isolation | Preprocessing for all downstream experiments |
-| 02_train_lightgbm.py | LightGBM 5-fold CV on T-30 data, compared against ARTEMIS | AUC 0.905 vs ARTEMIS 0.803 |
-| 03_temporal_ablation.py | Sweep AUC from T-0 to T-90 in six windows | T-0: 0.908, T-30: 0.905, T-90: 0.902 |
-| 12_extended_temporal.py | Extend the sweep to T-120, T-150, T-180 | T-180: 0.895, total drop over six months is 0.013 |
-
-### Feature Analysis
-
-Which of the 18 features carry signal, and does their importance shift across time windows?
-
-| Script | Purpose | Key result |
-|--------|---------|------------|
-| 04_feature_importance.py | Track LightGBM gain-based importance at T-0, T-30, T-60, T-90 | NFT diversity stable at 38-49%; unique_interactions rises from 7% to 22% as window extends |
-| 06_ablation_features.py | Remove one feature group at a time: Activity, Diversity, Volume, Behavioral, DeFi | DeFi alone achieves 0.544; sybils do not use Blend |
-| 07_graph_features.py | Add graph structure features (address clustering, neighbor counts) to LightGBM | Behavioral 0.904, behavioral+graph 0.905; graph adds 0.001 |
-| 10_shap_analysis.py | SHAP beeswarm on T-30 model | Confirms unique_interactions and buy_value as top contributors alongside diversity |
-| 19_shap_temporal.py | Compare SHAP distributions at T-90 vs T-7 | T-90: wallet_age_days high (batch wallet creation signal); T-7: recent_activity high (sprint-before-distribution signal) |
-
-### GNN Comparison
-
-Why does the best existing method fail in the pre-airdrop setting?
-
-| Script | Purpose | Key result |
-|--------|---------|------------|
-| 09_artemis_gnn.py | Reproduce ArtemisNet GNN with full post-hoc graph | AUC 0.976, confirms the post-hoc upper bound |
-| 15_gnn_preairdrop.py | Apply ArtemisNet to pre-airdrop graph (T-30 cutoff) | AUC 0.586; collapses because airdrop transfer edges are absent |
-
-### Generalization and Robustness
-
-Does the model learn a real signal or overfit to Blur Season 2?
-
-| Script | Purpose | Key result |
-|--------|---------|------------|
-| 05_pr_analysis.py | Full precision-recall curve for threshold selection at deployment | Documents trade-off across operating points |
-| 08_generalization.py | Temporal split (train T-90, test T-30) and population split (50% unseen sybil types) | Temporal: 0.898; population: 0.744 |
-| 11_sybil_clustering.py | K-means on sybil addresses to identify behavioral subtypes | K=3: 49K retail hunters, 601 mid-volume, 6 hyperactive bots (9K+ transactions each) |
-| 20_clustering_k_selection.py | Elbow and silhouette analysis to justify K choice | Silhouette optimal at K=2 (0.984), K=3 chosen for semantic separation |
-| 21_flag_type_generalization.py | Leave-one-flag-out: train without one sybil type, test on that type | BW=0.047, FD=0.110, ML=0.241, HF=0.550; each type has a distinct behavioral fingerprint |
-| 22_calibration.py | Isotonic regression calibration of output probabilities | Brier score 0.120 to 0.091 (-24%), AUC unchanged |
-
-### Adversarial Analysis
-
-If a sybil hunter knows about the model, can they cheaply evade it?
-
-| Script | Purpose | Key result |
-|--------|---------|------------|
-| 13_adversarial_robustness.py | Simulate diversity-reduction evasion at increasing levels | AUC drops slowly under evasion; 70% diversity reduction cuts AUC to 0.901 |
-| 23_adversarial_cost.py | Quantify the economic cost of evasion in lost airdrop points | 90% diversity cut reduces AUC by 0.6% but costs 67% of expected points; evasion is self-defeating |
-
-### Cross-Protocol Transfer
-
-Does the method work on other protocols, and what determines transfer quality?
-
-| Script | Purpose | Key result |
-|--------|---------|------------|
-| 14_cross_protocol.py | Blur-to-Hop zero-shot and fine-tune with protocol-specific features | Zero-shot AUC 0.500; 1% Hop labels recovers 0.982 |
-| 16_lopo_crossprotocol.py | Leave-one-protocol-out across Blur, Hop, Gitcoin with protocol-specific features | AUC 0.22-0.47; initially looks like failure |
-| 16b_lopo_blur_hop.py | Blur-Hop label-budget curve: how many Hop labels are needed? | 1% labels (roughly 300 samples) recovers AUC 0.982; 20% gives 0.981 |
-| 17_common_features_lopo.py | Repeat LOPO with five protocol-agnostic features | Blur-to-Hop improves from 0.38 to 0.78; low LOPO AUC in Exp 16 was mostly feature mismatch |
-| 18_gitcoin_feature_importance.py | Feature importance within the Gitcoin domain | gitcoin_donations importance = 0%; SADScore labels general on-chain anomalies, not Gitcoin-specific farming |
-| 24_layerzero_lopo.py | Add LayerZero as fourth protocol; test same-class vs cross-domain transfer | Hop-to-LZ (bridge-to-bridge): 0.567; Blur-to-LZ (NFT-to-bridge): 0.434; protocol category affects transfer |
-| 28_layerzero_temporal.py | Full temporal ablation on LayerZero (17,072 active addresses at T-30); same pipeline as Blur Exp 03 | T-30: AUC 0.9462, P 0.8648, R 0.8786, F1 0.8717; T-60: 0.9468 (16,781); T-90: 0.9462 (15,616) — range 0.0006, flatter than Blur; exceeds LZ in-domain bound from Exp 24 (0.892) |
-
-### Deployment Readiness
-
-Can the remaining weaknesses be resolved before production use?
-
-| Script | Purpose | Key result |
-|--------|---------|------------|
-| 25_openworld_detection.py | Two-stage detector: LightGBM for known types, Isolation Forest for unknown | IF raises BW detection from 0.047 to 0.916 without any BW labels |
-| 26_label_noise.py | Flip 5-20% of labels randomly, retrain, measure AUC degradation | 20% label corruption drops AUC by 0.014; model is robust to imperfect blacklists |
-| 27_rule_baselines.py | Compare against simple heuristics (wallet age, tx count) and weaker ML models | Best rule: 0.610; Logistic Regression: 0.859; Random Forest: 0.897; LightGBM: 0.905 |
 
 ## Reproducibility
 

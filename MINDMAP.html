@@ -92,9 +92,36 @@
   </div>
 </div>
 
-<!-- ===== Q1 ===== -->
+<!-- ===== Act 1: GNN 为什么在事前失效？ ===== -->
 <details open>
-<summary class="q">ARTEMIS 是事后检测，空投结束才能识别。有办法事前做吗？</summary>
+<summary class="q">Act 1 — GNN 为什么在事前失效？</summary>
+<details>
+  <summary>[07] 图特征增强 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">ARTEMIS 是 GNN，做个对照。把图结构特征提取出来合并进 LightGBM。</div>
+    <table>
+      <tr><th>实验</th><th>AUC</th></tr>
+      <tr><td>行为特征</td><td class="hi">0.904</td></tr>
+      <tr><td>图特征</td><td>0.873</td></tr>
+      <tr><td>行为 + 图</td><td class="hi">0.905</td></tr>
+    </table>
+    <div class="find">合并后只提升 +0.001，行为特征已经覆盖了绝大部分信号。图结构是锦上添花。</div>
+    <img class="plot" src="data/graph_augmentation_plot.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details>
+  <summary>[09][15] GNN 事后 vs 事前 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">既然 GNN 事后 0.976 这么强，为什么不直接用 GNN 做事前？</div>
+    <div class="fail find">ArtemisNet T-30 事前 AUC 只有 0.586，接近随机。原因是 ArtemisNet 的图依赖空投发放时产生的 transfer edge，这些 edge 在 T-30 时根本不存在。事前图是残缺的，GNN 无法工作。这是架构上的限制，不是调参问题。</div>
+  </div>
+  </details>
+
+
+<!-- ===== Act 2: 行为特征为什么能识别？主结果 ===== -->
+<details open>
+<summary class="q">Act 2 — 行为特征为什么有效？主结果</summary>
 <div class="body">ARTEMIS 用空投后完整数据识别 sybil，AUC 0.803。问题是事后没有预防价值。空投前的链上行为里有没有足够的信号？
     <div class="find" style="margin-top:8px;"><strong>Validated scope:</strong> Two protocol categories confirmed. Blur NFT marketplace (239K addr, AUC 0.905 at T-30) and LayerZero bridge (29.8K addr, AUC 0.946 at T-30, Exp 28). Signal is stable 90 days before airdrop in both domains. Pre-airdrop sybil detection generalizes across protocol types.</div>
   </div>
@@ -122,51 +149,7 @@
     <img class="plot" src="data/model_comparison_plot.png" onclick="openLightbox(this)">
   </div>
   </details>
-
-</details>
-
-<!-- ===== Q2 ===== -->
 <details>
-<summary class="q">能提前多久识别？信号早到什么时候？</summary>
-
-  <details>
-  <summary>[03] 时间消融 T-0 到 T-90 <span class="tag done">Done</span></summary>
-  <div class="body">
-    <div class="why">只报一个 T-30 不够，要展示"检测窗口有多宽"。如果曲线平坦，说明猎人的行为特征从他们开始刷积分就稳定存在，不是临时行为。</div>
-    <table>
-      <tr><th>窗口</th><th>AUC</th><th>F1</th></tr>
-      <tr><td>T-0（空投当天）</td><td class="hi">0.908</td><td>0.682</td></tr>
-      <tr><td>T-30</td><td class="hi">0.905</td><td>0.683</td></tr>
-      <tr><td>T-60</td><td class="hi">0.904</td><td>0.683</td></tr>
-      <tr><td>T-90</td><td class="hi">0.902</td><td>0.684</td></tr>
-    </table>
-    <div class="find">T-0 到 T-90 AUC 只降 0.006，曲线极其平坦。猎人从开始刷积分就有稳定的行为指纹。</div>
-    <div class="find"><strong>T-0 explanation:</strong> T-0 AUC (0.908) &gt; T-30 (0.905): last-mile sybil activity creates stronger signal at snapshot date — this is NOT data leakage. T-0 uses only transactions before the first claim event; the higher AUC reflects genuine last-minute behavioral intensification by sybils sprinting to accumulate points.</div>
-    <img class="plot" src="data/temporal_ablation_plot.png" onclick="openLightbox(this)">
-  </div>
-  </details>
-
-  <details>
-  <summary>[12] 扩展消融 T-120 到 T-180 <span class="tag done">Done</span></summary>
-  <div class="body">
-    <div class="why">T-90 仍然 0.902，自然要问边界在哪。T-180 还有 0.895，说明猎人在激励期开始时就已经在操作。</div>
-    <table>
-      <tr><th>窗口</th><th>AUC</th></tr>
-      <tr><td>T-120</td><td class="hi">0.899</td></tr>
-      <tr><td>T-150</td><td class="hi">0.898</td></tr>
-      <tr><td>T-180</td><td class="hi">0.895</td></tr>
-    </table>
-    <img class="plot" src="data/temporal_ablation_extended_plot.png" onclick="openLightbox(this)">
-  </div>
-  </details>
-
-</details>
-
-<!-- ===== Q3 ===== -->
-<details>
-<summary class="q">哪些特征在起作用？为什么这么早就能识别？</summary>
-
-  <details>
   <summary>[04] 特征重要性跨时间窗 <span class="tag done">Done</span></summary>
   <div class="body">
     <div class="why">需要验证 T-90 和 T-0 用的是不是同一批特征。如果漂移大，说明早期和晚期信号来自不同行为，需要分开解释。</div>
@@ -215,42 +198,41 @@
   </div>
   </details>
 
-</details>
 
-<!-- ===== Q4 ===== -->
-<details>
-<summary class="q">ARTEMIS 的核心是 GNN，加上图信息会更好吗？</summary>
-
+<!-- ===== Act 3: 信号有多稳定？ ===== -->
+<details open>
+<summary class="q">Act 3 — 信号有多早、多稳定？</summary>
   <details>
-  <summary>[07] 图特征增强 <span class="tag done">Done</span></summary>
+  <summary>[03] 时间消融 T-0 到 T-90 <span class="tag done">Done</span></summary>
   <div class="body">
-    <div class="why">ARTEMIS 是 GNN，做个对照。把图结构特征提取出来合并进 LightGBM。</div>
+    <div class="why">只报一个 T-30 不够，要展示"检测窗口有多宽"。如果曲线平坦，说明猎人的行为特征从他们开始刷积分就稳定存在，不是临时行为。</div>
     <table>
-      <tr><th>实验</th><th>AUC</th></tr>
-      <tr><td>行为特征</td><td class="hi">0.904</td></tr>
-      <tr><td>图特征</td><td>0.873</td></tr>
-      <tr><td>行为 + 图</td><td class="hi">0.905</td></tr>
+      <tr><th>窗口</th><th>AUC</th><th>F1</th></tr>
+      <tr><td>T-0（空投当天）</td><td class="hi">0.908</td><td>0.682</td></tr>
+      <tr><td>T-30</td><td class="hi">0.905</td><td>0.683</td></tr>
+      <tr><td>T-60</td><td class="hi">0.904</td><td>0.683</td></tr>
+      <tr><td>T-90</td><td class="hi">0.902</td><td>0.684</td></tr>
     </table>
-    <div class="find">合并后只提升 +0.001，行为特征已经覆盖了绝大部分信号。图结构是锦上添花。</div>
-    <img class="plot" src="data/graph_augmentation_plot.png" onclick="openLightbox(this)">
+    <div class="find">T-0 到 T-90 AUC 只降 0.006，曲线极其平坦。猎人从开始刷积分就有稳定的行为指纹。</div>
+    <div class="find"><strong>T-0 explanation:</strong> T-0 AUC (0.908) &gt; T-30 (0.905): last-mile sybil activity creates stronger signal at snapshot date — this is NOT data leakage. T-0 uses only transactions before the first claim event; the higher AUC reflects genuine last-minute behavioral intensification by sybils sprinting to accumulate points.</div>
+    <img class="plot" src="data/temporal_ablation_plot.png" onclick="openLightbox(this)">
   </div>
   </details>
 
   <details>
-  <summary>[09][15] GNN 事后 vs 事前 <span class="tag done">Done</span></summary>
+  <summary>[12] 扩展消融 T-120 到 T-180 <span class="tag done">Done</span></summary>
   <div class="body">
-    <div class="why">既然 GNN 事后 0.976 这么强，为什么不直接用 GNN 做事前？</div>
-    <div class="fail find">ArtemisNet T-30 事前 AUC 只有 0.586，接近随机。原因是 ArtemisNet 的图依赖空投发放时产生的 transfer edge，这些 edge 在 T-30 时根本不存在。事前图是残缺的，GNN 无法工作。这是架构上的限制，不是调参问题。</div>
+    <div class="why">T-90 仍然 0.902，自然要问边界在哪。T-180 还有 0.895，说明猎人在激励期开始时就已经在操作。</div>
+    <table>
+      <tr><th>窗口</th><th>AUC</th></tr>
+      <tr><td>T-120</td><td class="hi">0.899</td></tr>
+      <tr><td>T-150</td><td class="hi">0.898</td></tr>
+      <tr><td>T-180</td><td class="hi">0.895</td></tr>
+    </table>
+    <img class="plot" src="data/temporal_ablation_extended_plot.png" onclick="openLightbox(this)">
   </div>
   </details>
-
-</details>
-
-<!-- ===== Q5 ===== -->
 <details>
-<summary class="q">模型学到的是真实规律，还是记住了训练集？</summary>
-
-  <details>
   <summary>[08] 时间泛化 + 种群泛化 <span class="tag done">Done</span></summary>
   <div class="body">
     <div class="why">时间泛化：换一段时间的数据规律还在吗。种群泛化：没见过的 sybil 类型还能识别吗。两个维度不同，必须分别验证。</div>
@@ -345,12 +327,68 @@
   </div>
   </details>
 
+
+<!-- ===== Act 4: 攻击者能规避吗？ ===== -->
+<details open>
+<summary class="q">Act 4 — 攻击者能规避吗？</summary>
+<details open>
+  <summary>[25] Open-World 检测（BW 未见类型）<span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">Exp 21 显示 BW 类型留出后 AUC 0.047。原因是监督模型从未见过高买入金额的 sybil。Isolation Forest（无监督）不依赖标注，直接找统计异常点，理论上能发现未标注的新类型。</div>
+    <table>
+      <tr><th>方法</th><th>AUC（仅 BW 测试集）</th><th>说明</th></tr>
+      <tr><td>LightGBM（无 BW 训练）</td><td class="lo">0.061</td><td>监督，BW 完全未见</td></tr>
+      <tr><td>Isolation Forest</td><td class="hi">0.916</td><td>无监督，统计异常</td></tr>
+      <tr><td>两阶段（LGB + IF）</td><td class="hi">0.916</td><td>IF 权重=1.0</td></tr>
+      <tr><td>Oracle（含 BW 训练）</td><td class="hi">0.987</td><td>上限</td></tr>
+    </table>
+    <div class="find">IF 无监督 AUC 0.916，完全解决了 BW 泛化问题。原因：BW sybil 的 buy_value 极大，是统计异常点，IF 不需要标注就能识别。部署建议：监督模型处理已知类型，IF 做第二层捕捉未知策略。</div>
+    <img class="plot" src="data/openworld_detection.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details open>
+  <summary>[26] 标注噪声鲁棒性 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">官方黑名单未必完整，标注中可能有误报或漏报。如果 20% 标注错误导致 AUC 骤降，说明模型严重依赖标注质量；如果平缓下降，说明模型鲁棒，实际可部署。</div>
+    <table>
+      <tr><th>噪声比例</th><th>AUC</th><th>降幅</th></tr>
+      <tr><td>0%（基线）</td><td class="hi">0.905</td><td>—</td></tr>
+      <tr><td>5%</td><td class="hi">0.902</td><td>-0.003</td></tr>
+      <tr><td>10%</td><td class="hi">0.899</td><td>-0.006</td></tr>
+      <tr><td>15%</td><td class="mid">0.895</td><td>-0.010</td></tr>
+      <tr><td>20%</td><td class="mid">0.891</td><td>-0.014</td></tr>
+    </table>
+    <div class="find">20% 标注噪声只降 0.014，始终高于 ARTEMIS 0.803。模型对标注质量鲁棒，适合现实部署场景（协议方黑名单一般准确率 >90%）。</div>
+    <img class="plot" src="data/label_noise_robustness.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details open>
+  <summary>[27] 规则基线 vs ML <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">协议方实际上会用简单规则过滤 sybil（新钱包、低活跃）。如果规则基线就能 AUC 0.9，我们的贡献就没那么大。必须量化 ML 相对于规则的真实提升。</div>
+    <table>
+      <tr><th>方法</th><th>AUC</th><th>F1</th></tr>
+      <tr><td>LightGBM（本文）</td><td class="hi">0.905</td><td>0.666</td></tr>
+      <tr><td>Random Forest</td><td class="hi">0.897</td><td>0.640</td></tr>
+      <tr><td>Logistic Regression</td><td class="mid">0.859</td><td>0.613</td></tr>
+      <tr><td>规则：高买入量</td><td class="mid">0.610</td><td>0.366</td></tr>
+      <tr><td>规则：钱包年龄 &lt;30天</td><td class="lo">0.492</td><td>0.031</td></tr>
+      <tr><td>规则：tx_count &lt;10</td><td class="lo">0.350</td><td>0.236</td></tr>
+    </table>
+    <div class="find">最好的规则基线 AUC 0.610，ML 最低 0.859。规则无法捕捉复合行为模式（高买入量的大户和 sybil 行为高度重叠），ML 才能分开。</div>
+    <img class="plot" src="data/rule_baselines.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+
+</div>
 </details>
 
-<!-- ===== Q6 ===== -->
-<details>
-<summary class="q">能推广到其他协议吗？</summary>
-
+<!-- ===== Act 5: 第二个协议上成立吗？ ===== -->
+<details open>
+<summary class="q">Act 5 — 第二个协议上成立吗？</summary>
   <details>
   <summary>[14][16b] Blur → Hop 迁移 <span class="tag done">Done</span></summary>
   <div class="body">
@@ -403,14 +441,7 @@
     <img class="plot" src="data/gitcoin_shap.png" onclick="openLightbox(this)">
   </div>
   </details>
-
-</details>
-
-<!-- ===== Q7 ===== -->
-<details>
-<summary class="q">同类协议之间迁移效果更好吗？</summary>
-
-  <details open>
+<details open>
   <summary>[24] LayerZero LOPO <span class="tag done">Done</span></summary>
   <div class="body">
     <div class="why">Hop 是桥协议，LayerZero 也是跨链桥，机制相似。如果 Hop→LZ 比 Blur→LZ 迁移效果更好，就直接证明"协议类型"是决定迁移效果的关键变量。29,849 地址，ETH/ARB/POLY 三链，19,480 有活跃记录。</div>
@@ -446,66 +477,6 @@
   </div>
   </details>
 
-</details>
-
-<!-- ===== Q8 ===== -->
-<details>
-<summary class="q">论文局限性能解决吗？</summary>
-
-  <details open>
-  <summary>[25] Open-World 检测（BW 未见类型）<span class="tag done">Done</span></summary>
-  <div class="body">
-    <div class="why">Exp 21 显示 BW 类型留出后 AUC 0.047。原因是监督模型从未见过高买入金额的 sybil。Isolation Forest（无监督）不依赖标注，直接找统计异常点，理论上能发现未标注的新类型。</div>
-    <table>
-      <tr><th>方法</th><th>AUC（仅 BW 测试集）</th><th>说明</th></tr>
-      <tr><td>LightGBM（无 BW 训练）</td><td class="lo">0.061</td><td>监督，BW 完全未见</td></tr>
-      <tr><td>Isolation Forest</td><td class="hi">0.916</td><td>无监督，统计异常</td></tr>
-      <tr><td>两阶段（LGB + IF）</td><td class="hi">0.916</td><td>IF 权重=1.0</td></tr>
-      <tr><td>Oracle（含 BW 训练）</td><td class="hi">0.987</td><td>上限</td></tr>
-    </table>
-    <div class="find">IF 无监督 AUC 0.916，完全解决了 BW 泛化问题。原因：BW sybil 的 buy_value 极大，是统计异常点，IF 不需要标注就能识别。部署建议：监督模型处理已知类型，IF 做第二层捕捉未知策略。</div>
-    <img class="plot" src="data/openworld_detection.png" onclick="openLightbox(this)">
-  </div>
-  </details>
-
-  <details open>
-  <summary>[26] 标注噪声鲁棒性 <span class="tag done">Done</span></summary>
-  <div class="body">
-    <div class="why">官方黑名单未必完整，标注中可能有误报或漏报。如果 20% 标注错误导致 AUC 骤降，说明模型严重依赖标注质量；如果平缓下降，说明模型鲁棒，实际可部署。</div>
-    <table>
-      <tr><th>噪声比例</th><th>AUC</th><th>降幅</th></tr>
-      <tr><td>0%（基线）</td><td class="hi">0.905</td><td>—</td></tr>
-      <tr><td>5%</td><td class="hi">0.902</td><td>-0.003</td></tr>
-      <tr><td>10%</td><td class="hi">0.899</td><td>-0.006</td></tr>
-      <tr><td>15%</td><td class="mid">0.895</td><td>-0.010</td></tr>
-      <tr><td>20%</td><td class="mid">0.891</td><td>-0.014</td></tr>
-    </table>
-    <div class="find">20% 标注噪声只降 0.014，始终高于 ARTEMIS 0.803。模型对标注质量鲁棒，适合现实部署场景（协议方黑名单一般准确率 >90%）。</div>
-    <img class="plot" src="data/label_noise_robustness.png" onclick="openLightbox(this)">
-  </div>
-  </details>
-
-  <details open>
-  <summary>[27] 规则基线 vs ML <span class="tag done">Done</span></summary>
-  <div class="body">
-    <div class="why">协议方实际上会用简单规则过滤 sybil（新钱包、低活跃）。如果规则基线就能 AUC 0.9，我们的贡献就没那么大。必须量化 ML 相对于规则的真实提升。</div>
-    <table>
-      <tr><th>方法</th><th>AUC</th><th>F1</th></tr>
-      <tr><td>LightGBM（本文）</td><td class="hi">0.905</td><td>0.666</td></tr>
-      <tr><td>Random Forest</td><td class="hi">0.897</td><td>0.640</td></tr>
-      <tr><td>Logistic Regression</td><td class="mid">0.859</td><td>0.613</td></tr>
-      <tr><td>规则：高买入量</td><td class="mid">0.610</td><td>0.366</td></tr>
-      <tr><td>规则：钱包年龄 &lt;30天</td><td class="lo">0.492</td><td>0.031</td></tr>
-      <tr><td>规则：tx_count &lt;10</td><td class="lo">0.350</td><td>0.236</td></tr>
-    </table>
-    <div class="find">最好的规则基线 AUC 0.610，ML 最低 0.859。规则无法捕捉复合行为模式（高买入量的大户和 sybil 行为高度重叠），ML 才能分开。</div>
-    <img class="plot" src="data/rule_baselines.png" onclick="openLightbox(this)">
-  </div>
-  </details>
-
-</details>
-
-</div>
 
 <!-- ===== 右列：论文章节 ===== -->
 </div>
