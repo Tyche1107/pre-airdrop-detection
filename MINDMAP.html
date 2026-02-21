@@ -377,11 +377,78 @@
 <details>
 <summary class="q">同类协议之间迁移效果更好吗？</summary>
 
-  <details>
-  <summary>[WIP] LayerZero 第四协议 <span class="tag wip">采集中 ~15K/30K，ETA 2h</span></summary>
+  <details open>
+  <summary>[24] LayerZero LOPO <span class="tag done">Done</span></summary>
   <div class="body">
-    <div class="why">Hop 是桥接协议，LayerZero 也是跨链桥，机制相似。如果 Hop→LayerZero 的迁移比 Blur→LayerZero 更好，就能说明"协议类型"是决定迁移效果的关键变量，比现在的结论更有力。</div>
-    ETH / ARB / POLY 三链（OP/BSC/Base 样本活跃率 0%，已排除），29,849 个地址。完成后跑 Exp 24（LayerZero LOPO）。
+    <div class="why">Hop 是桥协议，LayerZero 也是跨链桥，机制相似。如果 Hop→LZ 比 Blur→LZ 迁移效果更好，就直接证明"协议类型"是决定迁移效果的关键变量。29,849 地址，ETH/ARB/POLY 三链，19,480 有活跃记录。</div>
+    <table>
+      <tr><th>实验</th><th>AUC</th><th>类型</th></tr>
+      <tr><td>Hop→LZ（同类桥协议）</td><td class="mid">0.567</td><td>零样本</td></tr>
+      <tr><td>Blur→LZ（跨域）</td><td class="lo">0.434</td><td>零样本</td></tr>
+      <tr><td>全协议→LZ</td><td class="lo">0.437</td><td>零样本</td></tr>
+      <tr><td>Blur + LZ 1% 微调</td><td class="lo">0.504</td><td>微调</td></tr>
+      <tr><td>Blur + LZ 20% 微调</td><td class="mid">0.736</td><td>微调</td></tr>
+      <tr><td>LZ 域内（上限）</td><td class="hi">0.892</td><td>域内</td></tr>
+    </table>
+    <div class="find">同类桥协议 Hop→LZ (0.567) > 跨域 Blur→LZ (0.434)，方向上验证了协议类型影响迁移效果的假说。但零样本整体偏低，说明 LZ sybil 行为模式与 Hop 仍有显著差距（LZ 是跨链消息层，Hop 是代币桥，激励机制不同）。</div>
+    <img class="plot" src="data/layerzero_lopo.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+</details>
+
+<!-- ===== Q8 ===== -->
+<details>
+<summary class="q">论文局限性能解决吗？</summary>
+
+  <details open>
+  <summary>[25] Open-World 检测（BW 未见类型）<span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">Exp 21 显示 BW 类型留出后 AUC 0.047。原因是监督模型从未见过高买入金额的 sybil。Isolation Forest（无监督）不依赖标注，直接找统计异常点，理论上能发现未标注的新类型。</div>
+    <table>
+      <tr><th>方法</th><th>AUC（仅 BW 测试集）</th><th>说明</th></tr>
+      <tr><td>LightGBM（无 BW 训练）</td><td class="lo">0.061</td><td>监督，BW 完全未见</td></tr>
+      <tr><td>Isolation Forest</td><td class="hi">0.916</td><td>无监督，统计异常</td></tr>
+      <tr><td>两阶段（LGB + IF）</td><td class="hi">0.916</td><td>IF 权重=1.0</td></tr>
+      <tr><td>Oracle（含 BW 训练）</td><td class="hi">0.987</td><td>上限</td></tr>
+    </table>
+    <div class="find">IF 无监督 AUC 0.916，完全解决了 BW 泛化问题。原因：BW sybil 的 buy_value 极大，是统计异常点，IF 不需要标注就能识别。部署建议：监督模型处理已知类型，IF 做第二层捕捉未知策略。</div>
+    <img class="plot" src="data/openworld_detection.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details open>
+  <summary>[26] 标注噪声鲁棒性 <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">官方黑名单未必完整，标注中可能有误报或漏报。如果 20% 标注错误导致 AUC 骤降，说明模型严重依赖标注质量；如果平缓下降，说明模型鲁棒，实际可部署。</div>
+    <table>
+      <tr><th>噪声比例</th><th>AUC</th><th>降幅</th></tr>
+      <tr><td>0%（基线）</td><td class="hi">0.905</td><td>—</td></tr>
+      <tr><td>5%</td><td class="hi">0.902</td><td>-0.003</td></tr>
+      <tr><td>10%</td><td class="hi">0.899</td><td>-0.006</td></tr>
+      <tr><td>15%</td><td class="mid">0.895</td><td>-0.010</td></tr>
+      <tr><td>20%</td><td class="mid">0.891</td><td>-0.014</td></tr>
+    </table>
+    <div class="find">20% 标注噪声只降 0.014，始终高于 ARTEMIS 0.803。模型对标注质量鲁棒，适合现实部署场景（协议方黑名单一般准确率 >90%）。</div>
+    <img class="plot" src="data/label_noise_robustness.png" onclick="openLightbox(this)">
+  </div>
+  </details>
+
+  <details open>
+  <summary>[27] 规则基线 vs ML <span class="tag done">Done</span></summary>
+  <div class="body">
+    <div class="why">协议方实际上会用简单规则过滤 sybil（新钱包、低活跃）。如果规则基线就能 AUC 0.9，我们的贡献就没那么大。必须量化 ML 相对于规则的真实提升。</div>
+    <table>
+      <tr><th>方法</th><th>AUC</th><th>F1</th></tr>
+      <tr><td>LightGBM（本文）</td><td class="hi">0.905</td><td>0.666</td></tr>
+      <tr><td>Random Forest</td><td class="hi">0.897</td><td>0.640</td></tr>
+      <tr><td>Logistic Regression</td><td class="mid">0.859</td><td>0.613</td></tr>
+      <tr><td>规则：高买入量</td><td class="mid">0.610</td><td>0.366</td></tr>
+      <tr><td>规则：钱包年龄 &lt;30天</td><td class="lo">0.492</td><td>0.031</td></tr>
+      <tr><td>规则：tx_count &lt;10</td><td class="lo">0.350</td><td>0.236</td></tr>
+    </table>
+    <div class="find">最好的规则基线 AUC 0.610，ML 最低 0.859。规则无法捕捉复合行为模式（高买入量的大户和 sybil 行为高度重叠），ML 才能分开。</div>
+    <img class="plot" src="data/rule_baselines.png" onclick="openLightbox(this)">
   </div>
   </details>
 
@@ -396,14 +463,14 @@
 <div class="ps"><div class="ps-title">2. Background</div><div class="ps-body">Blur S2 积分机制；ARTEMIS 综述；sybil 行为分类</div><div class="ps-pills"><span class="pill">[11]</span><span class="pill">[21]</span></div></div>
 <div class="ps"><div class="ps-title">3. Method</div><div class="ps-body">时间截断设计；18 特征工程；LightGBM 训练流程</div><div class="ps-pills"><span class="pill">[01]</span><span class="pill">[02]</span></div></div>
 <div class="ps"><div class="ps-title">4. Experiments</div><div class="ps-body">主结果 / 消融 / 特征分析 / 泛化 / 跨协议</div><div class="ps-pills"><span class="pill">[02]</span><span class="pill">[03]</span><span class="pill">[04]</span><span class="pill">[06]</span><span class="pill">[07]</span><span class="pill">[08]</span><span class="pill">[10]</span><span class="pill">[12]</span><span class="pill">[14]</span><span class="pill">[16]</span><span class="pill">[17]</span><span class="pill">[20]</span><span class="pill">[21]</span></div></div>
-<div class="ps"><div class="ps-title">5. Discussion</div><div class="ps-body">GNN 事前失效原因；Gitcoin 标注定义问题；逃避成本博弈；局限性</div><div class="ps-pills"><span class="pill">[09][15]</span><span class="pill">[18]</span><span class="pill">[23]</span><span class="pill">[22]</span></div></div>
-<div class="ps"><div class="ps-title">6. Conclusion</div><div class="ps-body">主结论汇总；LayerZero 扩展；未来方向</div><div class="ps-pills"><span class="pill">[WIP]</span><span class="pill">[19]</span></div></div>
+<div class="ps"><div class="ps-title">5. Discussion</div><div class="ps-body">GNN 事前失效；Gitcoin 标注定义；逃避成本博弈；Two-stage open-world；局限性</div><div class="ps-pills"><span class="pill">[09][15]</span><span class="pill">[18]</span><span class="pill">[23]</span><span class="pill">[25]</span><span class="pill">[26]</span></div></div>
+<div class="ps"><div class="ps-title">6. Conclusion</div><div class="ps-body">主结论汇总；LayerZero 跨类型迁移；规则 vs ML；未来方向</div><div class="ps-pills"><span class="pill">[24]</span><span class="pill">[27]</span><span class="pill">[19]</span></div></div>
 <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
 <h2>状态</h2>
 <div style="font-size:12px;color:var(--text3);line-height:2.2;">
-  <span class="pill" style="background:#1a3a1a;color:var(--green);">Done</span> 01-23 全部完成<br>
-  <span class="pill" style="background:#3a2a00;color:var(--yellow);">WIP</span> LayerZero 数据采集中<br>
-  <span class="pill" style="background:#2a1a2a;color:var(--purple);">Next</span> Exp 24 LayerZero LOPO
+  <span class="pill" style="background:#1a3a1a;color:var(--green);">Done</span> 01-27 全部完成<br>
+  <span class="pill" style="background:#1a3a1a;color:var(--green);">Done</span> LayerZero 29,849 地址已抓<br>
+  <span class="pill" style="background:#2a1a2a;color:var(--purple);">Next</span> LZ 时序消融（第二事件验证）
 </div>
 </div>
 </div>
