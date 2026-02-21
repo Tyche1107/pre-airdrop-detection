@@ -7,7 +7,7 @@ Protocols: Blur (NFT), Hop (Bridge), Gitcoin (Public Goods)
 import os
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import QuantileTransformer
 from sklearn.metrics import roc_auc_score
 import lightgbm as lgb
 import warnings
@@ -43,6 +43,9 @@ def load_blur():
     df['wallet_age_days'] = (BLUR_T0 - df['first_ts'].fillna(BLUR_T0)) / 86400
     df['wallet_age_days'] = df['wallet_age_days'].clip(lower=0)
 
+    # Fix blend_net_value: stored in WEI, divide by 1e18 for ETH
+    df['blend_net_value_eth'] = df['blend_net_value'].fillna(0) / 1e18
+
     feat = pd.DataFrame({
         'address':           df['address'],
         'is_sybil':          df['is_sybil'],
@@ -51,6 +54,7 @@ def load_blur():
         'unique_interact':   df['unique_interactions'].fillna(0),
         'wallet_age_days':   df['wallet_age_days'].fillna(0),
         'protocol':          'blur'
+        # Note: LP_count/LP_value/DeLP_count/DeLP_value excluded (all zeros)
     })
     print(f"Blur: {len(feat)} addrs, {feat['is_sybil'].sum()} sybils ({feat['is_sybil'].mean()*100:.1f}%)")
     return feat
@@ -122,6 +126,13 @@ def load_gitcoin():
 # ─── Feature columns ─────────────────────────────────────────────────────────
 FEATS = ['tx_count', 'volume', 'unique_interact', 'wallet_age_days']
 
+def normalize_protocol(df):
+    """Quantile-normalize each protocol's features independently (rank-based, scale-invariant)."""
+    X = df[FEATS].copy().astype(float)
+    qt = QuantileTransformer(output_distribution='uniform', random_state=42)
+    X_norm = pd.DataFrame(qt.fit_transform(X), columns=FEATS)
+    return X_norm
+
 def preprocess(df):
     X = df[FEATS].copy().astype(float)
     X = X.apply(np.log1p)
@@ -150,6 +161,13 @@ print("\nLoading datasets...")
 blur    = load_blur()
 hop     = load_hop()
 gitcoin = load_gitcoin()
+
+# Per-protocol quantile normalization before combining
+print("\nApplying per-protocol quantile normalization...")
+for name, df in [('blur', blur), ('hop', hop), ('gitcoin', gitcoin)]:
+    normed = normalize_protocol(df)
+    for col in FEATS:
+        df[col] = normed[col].values
 
 datasets = {'blur': blur, 'hop': hop, 'gitcoin': gitcoin}
 
