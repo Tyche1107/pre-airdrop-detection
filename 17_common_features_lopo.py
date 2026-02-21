@@ -39,8 +39,8 @@ def load_blur_generic():
         'wallet_age_days': g['timestamp'].apply(lambda t: (BLUR_T0*1000 - t.min()) / 86400000).values,
         'active_span_days': g['timestamp'].apply(lambda t: (t.max() - t.min()) / 86400000).values,
     })
-    labels = pd.read_csv(f'{OUT_DIR}/nft_feats_T30.csv', usecols=['address', 'is_sybil'])
-    feat = feat.merge(labels, on='address', how='inner')
+    sybil_set = set(open('/Users/adelinewen/Desktop/dataset/blurtx/dataset/airdrop2_targets.txt').read().strip().lower().split('\n'))
+    feat['is_sybil'] = feat['address'].isin(sybil_set).astype(int)
     feat['protocol'] = 'blur'
     print(f"Blur generic: {len(feat)} rows, sybil_rate={feat.is_sybil.mean():.3f}")
     return feat
