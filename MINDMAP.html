@@ -60,8 +60,8 @@
 
 <!-- ===== Q1 ===== -->
 <details open>
-<summary class="q">ARTEMIS 事后检测，空投结束才能识别。能事前做吗？</summary>
-<div class="body">ARTEMIS (WWW'24) 用空投后完整数据识别 sybil，AUC 0.803。问题是事后验尸没有预防价值。我们的问题：空投前的链上行为里有没有足够的信号？
+<summary class="q">ARTEMIS 是事后检测，空投结束才能识别。有办法事前做吗？</summary>
+<div class="body">ARTEMIS 用空投后完整数据识别 sybil，AUC 0.803。问题是事后没有预防价值。空投前的链上行为里有没有足够的信号？
     <div class="find" style="margin-top:8px;"><strong>Validated scope:</strong> Two protocol categories confirmed. Blur NFT marketplace (239K addr, AUC 0.905 at T-30) and LayerZero bridge (29.8K addr, AUC 0.946 at T-30, Exp 28). Signal is stable 90 days before airdrop in both domains. Pre-airdrop sybil detection generalizes across protocol types.</div>
   </div>
 
@@ -190,7 +190,7 @@
   <details>
   <summary>[07] 图特征增强 <span class="tag done">Done</span></summary>
   <div class="body">
-    <div class="why">ARTEMIS 是 GNN，审稿人一定会问"你不加图信息是不是吃亏了"。必须有这个对照。把图结构特征提取出来合并进 LightGBM。</div>
+    <div class="why">ARTEMIS 是 GNN，做个对照。把图结构特征提取出来合并进 LightGBM。</div>
     <table>
       <tr><th>实验</th><th>AUC</th></tr>
       <tr><td>行为特征</td><td class="hi">0.904</td></tr>
