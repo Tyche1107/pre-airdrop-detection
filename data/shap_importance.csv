@@ -1,0 +1,19 @@
+feature,shap_importance,label
+unique_interactions,0.6928836964398305,Unique Interactions
+buy_value,0.68268538275667,Buy Volume (ETH)
+buy_collections,0.623251478161146,NFT Diversity
+tx_count,0.4921474087717923,Total Tx
+sell_value,0.3028735558623914,Sell Volume (ETH)
+wallet_age_days,0.29948197702340695,Wallet Age
+days_since_last_buy,0.16672982088497248,Days Since Last Buy
+total_trade_count,0.10509316690134574,Total Trade Count
+ratio,0.09676235678679086,Volume Ratio
+sell_ratio,0.08451116453932869,Sell Ratio
+buy_count,0.06756080645053915,Buy Count
+pnl_proxy,0.06332521690678795,PnL Proxy
+sell_count,0.06035119437430235,Sell Count
+blend_in_count,0.045873882272226,Blend Borrow
+blend_net_value,0.022221033642951717,Blend Net Value
+blend_out_count,0.01442437196634468,Blend Repay
+recent_activity,0.00016127958663103177,Recent Activity
+LP_count,0.0,LP Activity

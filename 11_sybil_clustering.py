@@ -58,8 +58,21 @@ sil_scores=[]
 for k in range(2,8):
     km=KMeans(n_clusters=k,random_state=42,n_init=10)
     labels=km.fit_predict(Xs)
-    sil_scores.append((k,silhouette_score(Xs,labels,sample_size=5000,random_state=42)))
-    print(f"  K={k} silhouette={sil_scores[-1][1]:.4f}"); sys.stdout.flush()
+    if len(np.unique(labels)) < 2:
+        print(f"  K={k} skipped (only 1 unique cluster label)"); sys.stdout.flush()
+        continue
+    try:
+        # Use min(5000, len(Xs)-1) to avoid issues with small datasets
+        n_sample = min(5000, len(Xs)) if len(Xs) > 5000 else None
+        score = silhouette_score(Xs, labels, sample_size=n_sample, random_state=42)
+        sil_scores.append((k, score))
+        print(f"  K={k} silhouette={sil_scores[-1][1]:.4f}"); sys.stdout.flush()
+    except Exception as e:
+        print(f"  K={k} silhouette error: {e}"); sys.stdout.flush()
+
+if not sil_scores:
+    print("No valid silhouette scores computed, defaulting to K=2")
+    sil_scores = [(2, 0.0)]
 
 best_k=max(sil_scores,key=lambda x:x[1])[0]
 print(f"\nBest K={best_k}")

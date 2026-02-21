@@ -1,0 +1,4 @@
+model,auc,note
+ARTEMIS (paper),0.803,"post-hoc, WWW24"
+LightGBM T-30,0.9045,pre-airdrop 30d
+GNN (Artemis),0.9893575620900806,this run
