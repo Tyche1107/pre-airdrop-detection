@@ -1,0 +1,6 @@
+scenario,auc,description
+Baseline (no evasion),0.904,Normal Sybil behavior
+Reduce NFT diversity -50%,0.883,buy_collections reduced
+Reduce NFT diversity -80%,0.8686,buy_collections reduced
+Reduce unique interactions -50%,0.866,unique_interactions reduced
+Mimic normal user diversity,0.8617,buy_collections reduced

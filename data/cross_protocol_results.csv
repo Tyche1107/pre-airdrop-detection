@@ -1,0 +1,5 @@
+experiment,protocol,auc
+Blur in-domain (generic features),Blur,0.887
+Hop in-domain (same protocol),Hop,0.9781
+Zero-shot (Blur→Hop),Hop,0.7261
+Fine-tuned (10% Hop labels),Hop,0.9655
