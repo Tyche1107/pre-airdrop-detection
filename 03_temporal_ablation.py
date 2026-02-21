@@ -125,6 +125,17 @@ def compute_features(txs_sub: pd.DataFrame, cutoff_ts: int) -> pd.DataFrame:
         buy_first_ts=('ts', 'min'),
     ).reset_index()
 
+    # Burst detection: std of inter-buy intervals (Sybils cluster activity)
+    def buy_interval_std(ts_series):
+        sorted_ts = ts_series.sort_values().values
+        if len(sorted_ts) < 2: return 0.0
+        intervals = np.diff(sorted_ts) / 86400  # in days
+        return float(np.std(intervals))
+
+    burst_stats = buys.groupby('addr')['ts'].apply(buy_interval_std).reset_index()
+    burst_stats.columns = ['addr', 'buy_interval_std']
+    buy_stats = buy_stats.merge(burst_stats, on='addr', how='left')
+
     # --- Sell stats ---
     sell_stats = sells.groupby('addr').agg(
         sell_count=('is_sell', 'count'),
@@ -154,6 +165,12 @@ def compute_features(txs_sub: pd.DataFrame, cutoff_ts: int) -> pd.DataFrame:
     feat['days_since_last_buy'] = (cutoff_ts - feat['buy_last_ts'].clip(lower=0)) / 86400
     # Recency: how active in last 30 days relative to cutoff
     feat['recent_activity'] = (feat['buy_last_ts'] > (cutoff_ts - 30*86400)).astype(int)
+    # P1 Temporal features: burst detection & activity concentration
+    feat['activity_span_days'] = (feat['buy_last_ts'] - feat['buy_first_ts']).clip(lower=0) / 86400
+    feat['buy_rate'] = feat['buy_count'] / (feat['activity_span_days'] + 1)  # buys/day
+    feat['activity_concentration'] = 1 - (feat['activity_span_days'] / (feat['wallet_age_days'] + 1))
+    # buy_interval_std: already computed per-address above (0 = all buys on same day = burst)
+    feat['buy_interval_std'] = feat['buy_interval_std'].fillna(0)
 
     # Filter out non-trader addresses (tx_count == 0 and buy_count == 0)
     feat = feat[feat['total_trade_count'] > 0].copy()
@@ -195,6 +212,8 @@ for window_name, cutoff_ts in WINDOWS.items():
     ext_cols_fill = ['blend_in_count', 'blend_out_count', 'blend_net_value',
                      'LP_count', 'DeLP_count', 'unique_interactions', 'ratio']
     feat[ext_cols_fill] = feat[ext_cols_fill].fillna(0)
+    # Fix blend_net_value: raw value is in WEI, convert to ETH
+    feat['blend_net_value_eth'] = feat['blend_net_value'] / 1e18
 
     # Label
     feat['label'] = feat['addr'].isin(targets).astype(int)
@@ -213,10 +232,11 @@ for window_name, cutoff_ts in WINDOWS.items():
         'sell_count', 'sell_value', 'sell_ratio',
         'total_trade_count', 'pnl_proxy',
         'wallet_age_days', 'days_since_last_buy', 'recent_activity',
+        'activity_span_days', 'buy_rate', 'activity_concentration', 'buy_interval_std',
         'tx_count',
-        # Extended
-        'blend_in_count', 'blend_out_count', 'blend_net_value',
-        'LP_count', 'DeLP_count', 'unique_interactions', 'ratio'
+        # Extended (LP_count/DeLP_count removed: all-zero, zero variance)
+        'blend_in_count', 'blend_out_count', 'blend_net_value_eth',
+        'unique_interactions', 'ratio'
     ]
     # Keep only cols that exist
     feature_cols = [c for c in feature_cols if c in feat.columns]

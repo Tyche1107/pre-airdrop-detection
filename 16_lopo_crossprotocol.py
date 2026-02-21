@@ -162,13 +162,8 @@ blur    = load_blur()
 hop     = load_hop()
 gitcoin = load_gitcoin()
 
-# Per-protocol quantile normalization before combining
-print("\nApplying per-protocol quantile normalization...")
-for name, df in [('blur', blur), ('hop', hop), ('gitcoin', gitcoin)]:
-    normed = normalize_protocol(df)
-    for col in FEATS:
-        df[col] = normed[col].values
-
+# Note: per-protocol quantile normalization NOT applied — distorts signal
+# when Sybil rates differ significantly (e.g., Gitcoin 71% vs Blur 20%)
 datasets = {'blur': blur, 'hop': hop, 'gitcoin': gitcoin}
 
 print("\n--- LOPO Results ---")
