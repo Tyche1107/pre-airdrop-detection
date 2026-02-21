@@ -58,6 +58,40 @@
 <div class="cols">
 <div class="col-exp">
 
+<div style="background:linear-gradient(135deg,#1a202c 0%,#2d3748 100%);border:1px solid #4a90d9;border-radius:8px;padding:16px 20px;margin-bottom:18px;">
+  <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4a90d9;margin-bottom:10px;font-weight:700;">Core Findings</div>
+  <div style="display:grid;gap:10px;">
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="color:#68d391;font-size:18px;line-height:1;flex-shrink:0;">1</span>
+      <div>
+        <span style="color:#e2e8f0;font-size:13px;font-weight:600;">Pre-airdrop beats post-hoc GNN.</span>
+        <span style="color:#94a3b8;font-size:12.5px;"> Blur AUC 0.905 / LayerZero AUC 0.946 at T-30 — both exceed ARTEMIS 0.803, using only pre-airdrop data.</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="color:#68d391;font-size:18px;line-height:1;flex-shrink:0;">2</span>
+      <div>
+        <span style="color:#e2e8f0;font-size:13px;font-weight:600;">GNN fails structurally, not incidentally.</span>
+        <span style="color:#94a3b8;font-size:12.5px;"> ArtemisNet 0.976 post-hoc → 0.586 at T-30. Graph edges include post-distribution transfers; remove them and the architecture breaks.</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="color:#68d391;font-size:18px;line-height:1;flex-shrink:0;">3</span>
+      <div>
+        <span style="color:#e2e8f0;font-size:13px;font-weight:600;">The signal is stable 6 months in advance.</span>
+        <span style="color:#94a3b8;font-size:12.5px;"> Blur: 0.013 drop T-0 to T-180. LayerZero: 0.0006 range across T-30/T-60/T-90. Behavioral fingerprints lock in early and hold.</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <span style="color:#68d391;font-size:18px;line-height:1;flex-shrink:0;">4</span>
+      <div>
+        <span style="color:#e2e8f0;font-size:13px;font-weight:600;">Evasion is economically self-defeating.</span>
+        <span style="color:#94a3b8;font-size:12.5px;"> 90% diversity reduction: AUC drops 0.6%, incentive points drop 67%. Rational attackers cannot evade without destroying their own reward.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== Q1 ===== -->
 <details open>
 <summary class="q">ARTEMIS 是事后检测，空投结束才能识别。有办法事前做吗？</summary>
