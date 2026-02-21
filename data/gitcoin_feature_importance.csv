@@ -1,0 +1,11 @@
+feature,importance,pct
+wallet_age_days,2450,16.333333333333332
+tx_count,2008,13.386666666666667
+unique_contracts,1855,12.366666666666665
+eth_sent,1665,11.1
+eth_received,1618,10.786666666666667
+token_tx_count,1516,10.106666666666667
+stable_volume_usd,1476,9.84
+unique_token_contracts,1250,8.333333333333332
+total_volume,1162,7.746666666666667
+gitcoin_donations,0,0.0
