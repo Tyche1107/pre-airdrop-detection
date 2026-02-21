@@ -46,11 +46,63 @@ The 28 experiments are organized around five questions.
 
 **Are the weaknesses addressable?** Experiments 25-27 directly address the three main limitations. Isolation Forest (unsupervised) raises detection of the unseen BW type from 0.047 to 0.916, because BW sybils are statistical outliers in feature space regardless of labeling. A two-stage deployment (supervised LightGBM plus unsupervised IF) is robust to novel sybil strategies. Label noise experiments show AUC drops only 0.014 under 20% label corruption, meaning the model is deployable even when the official blacklist is imperfect. Rule-based baselines (wallet age, transaction count thresholds) peak at AUC 0.610, far below LightGBM's 0.905, confirming that simple heuristics cannot capture the composite behavioral patterns that distinguish sybils from genuine heavy users.
 
-## Dataset
+## Datasets and Data Sources
 
-Primary: Blur Season 2 on-chain transactions, Feb-Nov 2023, 3.2M transactions, 251K addresses.
-Cross-protocol: Hop Protocol (204K addresses, 14K sybil), Gitcoin GR15 (39.9K addresses), LayerZero ZRO (29.8K addresses fetched, 19.5K active after filtering).
-Labels source: official protocol sybil lists (Blur airdrop2_targets, Hop Sybil Hunter program, LayerZero Proof of Sybil campaign).
+Each dataset uses a different source for on-chain features. This section documents exactly where the data comes from.
+
+### Blur (primary dataset)
+
+| Item | Detail |
+|------|--------|
+| Source | Blur NFT marketplace transaction logs, Season 2 (Feb-Nov 2023) |
+| Raw data | `TXS2_1662_1861.csv` — 3.2M NFT transactions, 251K unique addresses |
+| Labels | Blur official `airdrop2_targets` sybil list — binary is_sybil |
+| T0 | 1700525735 (2023-11-21 00:15:35 UTC, first Season 2 claim) |
+| Feature pipeline | `01_build_features.py` — 18 features computed directly from raw transaction CSV, no external API calls |
+
+### Hop Protocol (cross-protocol, Exp 14/16/17)
+
+| Item | Detail |
+|------|--------|
+| Source | Hop bridge transaction history |
+| Labels | Hop Sybil Hunter program official list |
+| Feature pipeline | Protocol-specific features; common 5-feature set for cross-protocol transfer (tx_count, total_volume, wallet_age_days, unique_contracts, active_span_days) |
+
+### Gitcoin GR15 (cross-protocol, Exp 16/17/18)
+
+| Item | Detail |
+|------|--------|
+| Source | Gitcoin Grants Round 15 on-chain data |
+| Labels | SADScore — Sybil Address Detection scores as binary labels |
+| Addresses | 39,962 addresses |
+| On-chain features | Fetched via **Etherscan V2 API** (`api.etherscan.io/v2/api`), multiple keys in parallel (`fetch_gitcoin_onchain.mjs`) |
+
+### LayerZero ZRO (cross-protocol, Exp 24 and Exp 28)
+
+**Exp 24** (`multichain_features.csv`) and **Exp 28** (`lz_temporal_features.csv`) use the same address list but different feature pipelines:
+
+| Item | Detail |
+|------|--------|
+| Addresses | 29,849 total; 19,480 active (total_tx > 0); 9,899 sybil / 9,581 normal |
+| Labels | LayerZero official "Proof of Sybil" campaign results |
+| T0 | 1718841600 (2024-06-20 00:00 UTC, ZRO airdrop) |
+
+**Exp 24 features** (`multichain_features.csv`):
+- Fetched via **Etherscan V2 API** across 3 chains: ETH mainnet, Arbitrum, Polygon
+- Keys: two rotating Etherscan API keys, 5 req/s each
+- Script: `fetch_lz_features.mjs` — aggregated chain-level features summed across chains
+- Covers: tx_count, wallet_age_days, unique_contracts, active_span_days, total_volume per chain and cross-chain total
+
+**Exp 28 features** (`lz_temporal_features.csv`):
+- Fetched via **Alchemy API** (`alchemy_getAssetTransfers`, ETH mainnet only)
+- Alchemy key used: `dPr_w2ES924h7eiMOHbeM` (app at dashboard.alchemy.com)
+- Script: `fetch_lz_alchemy.mjs` — 30 concurrent workers, ~100 addresses/second
+- Temporal cutoffs computed from same data: T-30 (1716249600), T-60 (1713657600), T-90 (1711065600)
+- **Limitation**: ARB and POLY networks not yet enabled in the Alchemy app. Exp 28 features are ETH-mainnet only. Re-running after enabling ARB/POLY will produce more complete cross-chain features.
+
+### Known Data Limitation (Exp 28)
+
+Exp 28 uses ETH-only behavioral features for a bridge protocol (LayerZero) whose core utility is cross-chain. This means the T-30/60/90 features capture Ethereum-side activity (token approvals, contract interactions before bridging) but miss the destination-chain behavior. Despite this limitation, Exp 28 achieves AUC 0.946, suggesting the pre-bridge Ethereum-side behavior alone is sufficient for detection. Adding ARB/POLY features is expected to improve results further.
 
 ## Experiments
 

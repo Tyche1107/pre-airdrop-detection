@@ -380,6 +380,7 @@
   <summary>[24] LayerZero LOPO <span class="tag done">Done</span></summary>
   <div class="body">
     <div class="why">Hop 是桥协议，LayerZero 也是跨链桥，机制相似。如果 Hop→LZ 比 Blur→LZ 迁移效果更好，就直接证明"协议类型"是决定迁移效果的关键变量。29,849 地址，ETH/ARB/POLY 三链，19,480 有活跃记录。</div>
+    <div class="find" style="border-left-color:#4a90d9">数据来源：LZ 地址标注来自 LayerZero 官方 Proof-of-Sybil 名单。链上特征通过 <strong>Etherscan V2 API</strong>（ETH + ARB + POLY 三链，两个 key 轮询，5 req/s/key）抓取，脚本 fetch_lz_features.mjs。</div>
     <table>
       <tr><th>实验</th><th>AUC</th><th>类型</th></tr>
       <tr><td>Hop→LZ（同类桥协议）</td><td class="mid">0.567</td><td>零样本</td></tr>
@@ -399,6 +400,7 @@
   <summary>[28] LayerZero 时间消融 <span class="tag done">Done</span> <span class="tag">T-30 AUC 0.9462</span></summary>
   <div class="body">
     <div class="why">Exp 24 只做了零样本和有限微调，域内上限 0.892 是跨验证估计。Exp 28 用和 Blur Exp 03 完全相同的流程直接在 LZ 上跑全时间消融，用 LZ 自己的 Proof-of-Sybil 标注训练，验证信号是否跨协议类型稳定。</div>
+    <div class="find" style="border-left-color:#4a90d9">数据来源：时序特征通过 <strong>Alchemy API</strong>（alchemy_getAssetTransfers，ETH mainnet，30 并发，约 100 addr/s）抓取，脚本 fetch_lz_alchemy.mjs。<strong>注意：ARB 和 POLY 网络暂未在 Alchemy app 中启用</strong>，当前特征仅覆盖 ETH 侧行为。开通后重跑预计 AUC 进一步提升。</div>
     <table>
       <tr><th>窗口</th><th>活跃地址</th><th>AUC</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
       <tr><td>T-30</td><td>17,072</td><td class="hi">0.9462</td><td class="hi">0.8648</td><td class="hi">0.8786</td><td class="hi">0.8717</td></tr>
