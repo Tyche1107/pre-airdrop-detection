@@ -128,7 +128,7 @@
   <div class="metric"><span class="val">0.905</span><span class="lab">T-30 AUC (提前1个月)</span></div>
   <div class="metric"><span class="val">+10.2%</span><span class="lab">vs ARTEMIS 0.803</span></div>
   <div class="metric"><span class="val">0.895</span><span class="lab">T-180 AUC (提前6个月)</span></div>
-  <div class="metric"><span class="val">0.982</span><span class="lab">1% 微调后跨协议 AUC</span></div>
+  <div class="metric"><span class="val">0.982</span><span class="lab">1% 微调后跨协议 AUC (Blur→Hop)</span></div>
   <div class="metric"><span class="val">0.780</span><span class="lab">公共特征集零样本迁移</span></div>
 </div>
 
@@ -429,12 +429,12 @@ ARTEMIS（WWW'24，我们实验室发的）用空投发完之后的完整链上�
     之前的版本只说"降低 diversity 可以降低被检测概率"，但这不完整。猎人降低 diversity 时，他们赚到的 Blur 积分也同比减少。如果逃避检测的代价比被抓住的损失还大，这个攻击策略就不合算。必须把经济账算清楚。
     <table>
       <tr><th>NFT Diversity 降低幅度</th><th>模型 AUC</th><th>AUC 变化</th><th>积分保留率</th></tr>
-      <tr><td>0%（不改变）</td><td class="hi">0.917</td><td>--</td><td>100%</td></tr>
-      <tr><td>30%</td><td>0.916</td><td>-0.1%</td><td>83.7%</td></tr>
-      <tr><td>70%</td><td>0.914</td><td>-0.3%</td><td>55.0%</td></tr>
-      <tr><td>90%</td><td>0.913</td><td>-0.4%</td><td>32.8%</td></tr>
+      <tr><td>0%（不改变）</td><td class="hi">0.904</td><td>--</td><td>100%</td></tr>
+      <tr><td>30%</td><td>0.903</td><td>-0.1%</td><td>83.7%</td></tr>
+      <tr><td>70%</td><td>0.901</td><td>-0.4%</td><td>55.0%</td></tr>
+      <tr><td>90%</td><td>0.899</td><td>-0.6%</td><td>32.8%</td></tr>
     </table>
-    <div class="finding">把 diversity 降低 90%，检测 AUC 只降 0.4%，但积分损失了 67%。这是自我打脸的攻击：猎人要逃避检测，就必须放弃大部分利润，让这次刷积分本身变得不合算。从博弈论角度，这意味着检测系统在经济上是稳定的，攻击没有动力。</div>
+    <div class="finding">把 diversity 降低 90%，检测 AUC 只降 0.6%，但积分损失了 67%。这是自我打脸的攻击：猎人要逃避检测，就必须放弃大部分利润，让这次刷积分本身变得不合算。从博弈论角度，这意味着检测系统在经济上是稳定的，攻击没有动力。</div>
     <div class="paper-contrib">Section 5 鲁棒性分析：从博弈论视角论证方法的实用价值，这是论文的差异化亮点之一。</div>
     <img class="plot" src="data/adversarial_cost_tradeoff.png" onclick="openLightbox(this)">
   </div>
