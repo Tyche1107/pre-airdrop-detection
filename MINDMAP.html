@@ -68,7 +68,7 @@
   <details open>
   <summary>[01] 特征构建 <span class="tag done">Done</span></summary>
   <div class="body">
-    <div class="why">猎人要赚积分必须提前链上操作，这些记录是客观存在的。从 TXS2（3.2M NFT 交易，251K 地址）提取 18 个行为特征，在 T-7/14/30/60/90 截断，严格模拟"只能看到空投前 N 天数据"的预警场景。</div>
+    <div class="why">猎人要赚积分必须提前链上操作，这些记录是客观存在的。从 TXS2 提取 18 个行为特征，在 T-7/14/30/60/90 截断，严格模拟"只能看到空投前 N 天数据"的预警场景。</div>
   </div>
   </details>
 
@@ -271,8 +271,8 @@
   <details>
   <summary>[20] 聚类 K 值选择依据 <span class="tag done">Done</span></summary>
   <div class="body">
-    <div class="why">说"用了 K=3"没有数学依据，审稿人会质疑。</div>
-    <div class="switch find">Silhouette 最优是 K=2 (0.984)，但 K=3 是 Inertia 曲线的自然拐点，且语义更清晰（K=2 会把中量猎人和超级机器人合并，丢失"超级机器人用 Blend"这个发现）。统计最优和语义可解释之间的权衡，论文里会明确说明。</div>
+    <div class="why"> 直接用了 K=3没有数学依据，要证明？</div>
+    <div class="switch find">Silhouette 最优是 K=2 (0.984)，但 K=3 是 Inertia 曲线的自然拐点，且语义更清晰（K=2 会把中量猎人和超级机器人合并，丢失"超级机器人用 Blend"这个发现）。统计最优和语义可解释之间的权衡。</div>
     <img class="plot" src="data/clustering_k_selection.png" onclick="openLightbox(this)">
   </div>
   </details>
