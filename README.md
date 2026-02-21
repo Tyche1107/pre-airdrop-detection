@@ -1,12 +1,32 @@
 # Pre-Airdrop Sybil Detection
 
+**Validated on two protocol categories:** Blur NFT marketplace (239K addresses, AUC 0.905 at T-30) and LayerZero bridge protocol (29.8K addresses, AUC 0.946 at T-30, Exp 28). Signal is stable 90 days before airdrop in both domains. Pre-airdrop sybil detection generalizes across protocol types with behavioral features computed strictly from on-chain data before distribution.
+
 ARTEMIS (WWW'24) detects airdrop hunters after distribution using full post-hoc graph data, achieving AUC 0.803. We ask a different question: can we detect them before the airdrop, using only what was observable on-chain before the event? The answer is yes, substantially, and months in advance.
 
 ## Core Finding
 
 LightGBM trained on 18 behavioral features from pre-airdrop transactions achieves AUC 0.905 at T-30 (one month before Blur Season 2 distribution on 2023-11-21), and 0.895 at T-180. The AUC curve from T-0 to T-180 drops only 0.013 total, meaning the behavioral fingerprint of sybil addresses is stable long before they collect rewards. This outperforms ARTEMIS despite using strictly pre-airdrop data.
 
+Experiment 28 applies the same approach to LayerZero (29.8K addresses): AUC 0.9462 at T-30, 0.9468 at T-60, 0.9462 at T-90 — a range of just 0.0006 across three months, even flatter than Blur's temporal curve. This result exceeds the LayerZero in-domain upper bound from Experiment 24 (0.892) and confirms that pre-airdrop behavioral fingerprints are a robust cross-protocol signal.
+
 The dominant feature is NFT collection diversity. Sybil hunters spread transactions across many collections to maximize points, and this pattern is structurally different from genuine collectors regardless of how early you look. The second most time-sensitive feature is unique contract interactions: the further back you go, the more important it becomes, because it captures the early account-creation behavior of batch wallets.
+
+## Key Results
+
+| Finding | Detail |
+|---------|--------|
+| **Pre-airdrop detection is feasible** | LightGBM achieves AUC 0.905 at T-30 on Blur, outperforming post-hoc ARTEMIS (0.803) using only pre-airdrop data |
+| **Generalizes across protocol types** | LayerZero bridge (Exp 28): AUC 0.9462 at T-30, 0.9468 at T-60, 0.9462 at T-90 — exceeds Blur and surpasses the LZ in-domain bound from Exp 24 (0.892) |
+| **LZ signal is even flatter than Blur** | T-30/T-60/T-90 range is 0.0006 on LayerZero vs 0.003 on Blur — behavioral fingerprints lock in earlier and hold more stably on bridge protocols |
+| **Signal is stable months in advance** | Blur: AUC drops only 0.013 from T-0 to T-180; LZ: essentially flat across 90 days |
+| **GNN collapses pre-airdrop** | ArtemisNet (AUC 0.976 post-hoc) collapses to AUC 0.586 at T-30 — a structural incompatibility, not a tuning issue |
+| **Evasion is economically irrational** | Reducing behavioral diversity by 90% drops AUC by only 0.6%, but costs 67% of accumulated incentive points — making evasion unprofitable |
+| **Protocol category governs zero-shot transfer** | Same-category bridge transfer (Hop→LZ: 0.567) outperforms cross-domain (Blur→LZ: 0.434); in-domain temporal training (Exp 28) achieves 0.946 |
+| **1% labels unlock adaptation** | ~300 target-protocol labels recover AUC from 0.50 to 0.982 on Hop |
+| **Two-stage detector handles novel sybils** | Isolation Forest raises unseen BW-type detection from AUC 0.047 to 0.916 without any BW labels |
+
+> **Adversarial robustness highlight:** Sybil evasion is economically irrational. A sybil hunter who reduces behavioral diversity by 90% to evade detection loses 67% of their accumulated incentive points, while AUC drops by only 0.6%. The economic cost of evasion far exceeds any benefit, making the detection system game-theoretically stable.
 
 ## Why GNN Does Not Work Pre-Airdrop
 
@@ -14,7 +34,7 @@ ArtemisNet (GNN) achieves AUC 0.976 post-hoc but collapses to AUC 0.586 at T-30.
 
 ## Experimental Design
 
-The 27 experiments are organized around five questions.
+The 28 experiments are organized around five questions.
 
 **Can we detect before the airdrop, and how early?** Experiments 01-03 and 12 establish the main result and temporal ablation from T-0 to T-180. Data leakage is prevented by a strict timestamp cutoff on all feature computation.
 
@@ -22,7 +42,7 @@ The 27 experiments are organized around five questions.
 
 **How well does the model actually generalize?** Experiments 05, 08, 11, 20, 21, and 22 test generalization from multiple directions: precision-recall thresholds for deployment, temporal and population splits, sybil subtype clustering (three types: retail hunter, mid-volume, and six hyperactive bots), leave-one-flag-out generalization by sybil strategy, and probability calibration. The critical failure case is flag-type generalization: when BW (high-value buyer) sybils are excluded from training, AUC drops to 0.047, because the model never learned to associate high buy_value with sybil behavior.
 
-**Does the method transfer to other protocols?** Experiments 14-18 and 24 test transfer across Blur, Hop Protocol, Gitcoin GR15, and LayerZero. Zero-shot transfer with protocol-specific features yields AUC 0.22-0.47, which initially looks like failure. Experiment 17 shows this is primarily feature mismatch: with a five-feature common set (tx_count, total_volume, wallet_age_days, unique_contracts, active_span_days), Blur-to-Hop zero-shot improves from 0.38 to 0.78. Experiment 24 adds LayerZero as a fourth protocol: same-class bridge transfer (Hop to LZ) achieves 0.567, better than cross-domain transfer (Blur to LZ at 0.434), supporting the hypothesis that protocol category is a meaningful predictor of transfer difficulty.
+**Does the method transfer to other protocols?** Experiments 14-18, 24, and 28 test transfer across Blur, Hop Protocol, Gitcoin GR15, and LayerZero. Zero-shot transfer with protocol-specific features yields AUC 0.22-0.47 (Exp 16), which initially looks like failure. Experiment 17 shows this is primarily feature mismatch: with a five-feature common set (tx_count, total_volume, wallet_age_days, unique_contracts, active_span_days), Blur-to-Hop zero-shot improves from 0.38 to 0.78. Experiment 24 tests zero-shot cross-protocol transfer to LayerZero: same-class bridge (Hop→LZ) achieves 0.567, outperforming cross-domain (Blur→LZ: 0.434). Experiment 28 applies the full temporal ablation on LayerZero directly, achieving AUC 0.9462/0.9468/0.9462 at T-30/T-60/T-90 — higher than both Blur and the in-domain result from Exp 24, with a temporal range of only 0.0006 across three months.
 
 **Are the weaknesses addressable?** Experiments 25-27 directly address the three main limitations. Isolation Forest (unsupervised) raises detection of the unseen BW type from 0.047 to 0.916, because BW sybils are statistical outliers in feature space regardless of labeling. A two-stage deployment (supervised LightGBM plus unsupervised IF) is robust to novel sybil strategies. Label noise experiments show AUC drops only 0.014 under 20% label corruption, meaning the model is deployable even when the official blacklist is imperfect. Rule-based baselines (wallet age, transaction count thresholds) peak at AUC 0.610, far below LightGBM's 0.905, confirming that simple heuristics cannot capture the composite behavioral patterns that distinguish sybils from genuine heavy users.
 
@@ -102,6 +122,7 @@ Does the method work on other protocols, and what determines transfer quality?
 | 17_common_features_lopo.py | Repeat LOPO with five protocol-agnostic features | Blur-to-Hop improves from 0.38 to 0.78; low LOPO AUC in Exp 16 was mostly feature mismatch |
 | 18_gitcoin_feature_importance.py | Feature importance within the Gitcoin domain | gitcoin_donations importance = 0%; SADScore labels general on-chain anomalies, not Gitcoin-specific farming |
 | 24_layerzero_lopo.py | Add LayerZero as fourth protocol; test same-class vs cross-domain transfer | Hop-to-LZ (bridge-to-bridge): 0.567; Blur-to-LZ (NFT-to-bridge): 0.434; protocol category affects transfer |
+| 28_layerzero_temporal.py | Full temporal ablation on LayerZero (17,072 active addresses at T-30); same pipeline as Blur Exp 03 | T-30: AUC 0.9462, P 0.8648, R 0.8786, F1 0.8717; T-60: 0.9468 (16,781); T-90: 0.9462 (15,616) — range 0.0006, flatter than Blur; exceeds LZ in-domain bound from Exp 24 (0.892) |
 
 ### Deployment Readiness
 
