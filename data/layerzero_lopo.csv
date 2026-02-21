@@ -1,0 +1,9 @@
+experiment,auc,type
+zero-shot (blur+hop+gitcoin),0.4372,zero-shot
+same-class bridge (hop→lz),0.5667,zero-shot
+cross-domain (blur→lz),0.434,zero-shot
+fine-tune blur+lz_1pct,0.5041,fine-tune
+fine-tune blur+lz_5pct,0.617,fine-tune
+fine-tune blur+lz_10pct,0.6644,fine-tune
+fine-tune blur+lz_20pct,0.7362,fine-tune
+lz in-domain,0.8917,in-domain
