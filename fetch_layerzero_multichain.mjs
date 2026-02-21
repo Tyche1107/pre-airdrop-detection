@@ -19,13 +19,11 @@ const ADDR_FILE = '/Users/adelinewen/Desktop/dataset/layerzero/addresses_labeled
 const OUT_FILE  = '/Users/adelinewen/Desktop/dataset/layerzero/multichain_features.csv'
 const PROGRESS  = '/tmp/lz_multichain_progress.log'
 
+// Only ETH/ARB/POLY have real LZ activity (OP/BSC/Base = 0% in sample)
 const CHAINS = [
   { id: 1,     name: 'eth'  },
   { id: 42161, name: 'arb'  },
-  { id: 10,    name: 'op'   },
   { id: 137,   name: 'poly' },
-  { id: 56,    name: 'bsc'  },
-  { id: 8453,  name: 'base' },
 ]
 
 // ── Global rate limiter (token bucket) ──────────────────────────────────────
@@ -118,10 +116,7 @@ function computeFeatures(address, is_sybil, allChainTxs) {
     tx_per_day: +tx_per_day.toFixed(4),
     tx_eth:  per_chain['eth']  || 0,
     tx_arb:  per_chain['arb']  || 0,
-    tx_op:   per_chain['op']   || 0,
     tx_poly: per_chain['poly'] || 0,
-    tx_bsc:  per_chain['bsc']  || 0,
-    tx_base: per_chain['base'] || 0,
   }
 }
 
@@ -151,14 +146,14 @@ async function main() {
   console.log(`Total=${all.length} Done=${done.size} Remaining=${todo.length}`)
   console.log(`Rate=${RATE_PER_SEC} req/s | ETA ~${Math.ceil(todo.length * CHAINS.length / RATE_PER_SEC / 3600)}h`)
 
-  const HEADER = 'address,is_sybil,total_tx,eth_sent,eth_recv,total_volume,unique_contracts,chains_used,wallet_age_days,active_span_days,tx_per_day,tx_eth,tx_arb,tx_op,tx_poly,tx_bsc,tx_base'
+  const HEADER = 'address,is_sybil,total_tx,eth_sent,eth_recv,total_volume,unique_contracts,chains_used,wallet_age_days,active_span_days,tx_per_day,tx_eth,tx_arb,tx_poly'
   if (!fs.existsSync(OUT_FILE)) fs.writeFileSync(OUT_FILE, HEADER + '\n')
 
   const ws = fs.createWriteStream(OUT_FILE, { flags: 'a' })
   let processed = 0, t0 = Date.now()
 
   // Process addresses with bounded concurrency
-  const ADDR_CONCURRENCY = 8  // 8 × 6 chains = 48 requests, managed by rate limiter
+  const ADDR_CONCURRENCY = 16  // 16 × 3 chains = 48 requests, managed by rate limiter
   for (let i = 0; i < todo.length; i += ADDR_CONCURRENCY) {
     const batch = todo.slice(i, i + ADDR_CONCURRENCY)
     await Promise.all(batch.map(async ({ address, is_sybil }) => {
