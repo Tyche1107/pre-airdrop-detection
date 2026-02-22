@@ -196,30 +196,31 @@
 </details>
 
 <details>
-<summary>[06] 特征组消融 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">LightGBM</span></summary>
+<summary>[06] 特征组消融 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
   <div class="note">数据: TXS2 → 53K | 模型: LightGBM，每组独立训练 | 5组: Activity / Diversity / Behavioral / Volume / DeFi</div>
   <table>
     <tr><th>特征组</th><th>AUC（仅此组）</th></tr>
-    <tr><td>Activity（交易频率）</td><td class="hi">—</td></tr>
-    <tr><td>Diversity（NFT多样性）</td><td class="hi">—</td></tr>
-    <tr><td>Behavioral（行为模式）</td><td>—</td></tr>
-    <tr><td>Volume（金额）</td><td>—</td></tr>
-    <tr><td>DeFi（Blend操作）</td><td class="lo">—</td></tr>
+    <tr><td>ALL（全部特征）</td><td class="hi">0.7904</td></tr>
+    <tr><td>Behavioral（行为模式）</td><td class="hi">0.7304</td></tr>
+    <tr><td>Activity（交易频率）</td><td>0.6741</td></tr>
+    <tr><td>Volume（金额）</td><td>0.6578</td></tr>
+    <tr><td>Diversity（NFT多样性）</td><td>0.5931</td></tr>
+    <tr><td>DeFi（Blend操作）</td><td class="lo">0.5256</td></tr>
   </table>
   <img class="plot" src="data/ablation_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[07] 图特征增强 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">LightGBM</span></summary>
+<summary>[07] 图特征增强 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
   <div class="note">数据: TXS2 + fund_graph_edges.csv → 53K | 模型: LightGBM</div>
   <table>
     <tr><th>特征集</th><th>AUC</th></tr>
-    <tr><td>行为特征</td><td class="hi">—</td></tr>
-    <tr><td>图特征（funder graph）</td><td>—</td></tr>
-    <tr><td>行为 + 图</td><td class="hi">—</td></tr>
+    <tr><td>行为特征</td><td class="hi">0.904</td></tr>
+    <tr><td>图特征（funder graph）</td><td>0.873</td></tr>
+    <tr><td>行为 + 图</td><td class="hi">0.905</td></tr>
   </table>
   <img class="plot" src="data/graph_augmentation_plot.png" onclick="openLightbox(this)">
 </div>
@@ -229,42 +230,42 @@
 <div class="sec">Q3: 多鲁棒？</div>
 
 <details>
-<summary>[08] 泛化实验 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">LightGBM</span></summary>
+<summary>[08] 泛化实验 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
   <div class="note">数据: TXS2 → 53K | 模型: LightGBM</div>
   <table>
     <tr><th>实验</th><th>AUC</th></tr>
-    <tr><td>标准 5-fold T-30</td><td class="hi">—</td></tr>
-    <tr><td>时间泛化（T-90 训练 → T-30 测试）</td><td class="hi">—</td></tr>
-    <tr><td>种群泛化（50% 未见 sybil 类型）</td><td class="mid">—</td></tr>
+    <tr><td>标准 5-fold T-30</td><td class="hi">0.7916</td></tr>
+    <tr><td>时间泛化（T-90 训练 → T-30 测试）</td><td class="hi">0.7979</td></tr>
+    <tr><td>种群泛化（50% 未见 sybil 类型）</td><td class="lo">0.4291</td></tr>
   </table>
   <img class="plot" src="data/generalization_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[26] 标签噪声鲁棒性 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">LightGBM</span></summary>
+<summary>[26] 标签噪声鲁棒性 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
   <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM | 随机翻转 is_sybil 标签</div>
   <table>
     <tr><th>噪声比例</th><th>AUC</th><th>vs 基线</th></tr>
-    <tr><td>0%</td><td class="hi">—</td><td>—</td></tr>
-    <tr><td>10%</td><td>—</td><td>—</td></tr>
-    <tr><td>20%</td><td>—</td><td>—</td></tr>
+    <tr><td>0%</td><td class="hi">0.797</td><td>基线</td></tr>
+    <tr><td>10%</td><td>0.781</td><td>-0.016</td></tr>
+    <tr><td>20%</td><td>0.765</td><td>-0.032</td></tr>
   </table>
   <img class="plot" src="data/label_noise_robustness.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[13][23] 对抗鲁棒性 + 逃避成本 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">LightGBM</span></summary>
+<summary>[13][23] 对抗鲁棒性 + 逃避成本 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
   <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM | 扰动 NFT diversity 特征</div>
   <table>
-    <tr><th>Diversity 降低</th><th>AUC 变化</th><th>积分保留</th></tr>
-    <tr><td>0%</td><td>—</td><td>100%</td></tr>
-    <tr><td>50%</td><td>—</td><td>~55%</td></tr>
-    <tr><td>90%</td><td>—</td><td>~33%</td></tr>
+    <tr><th>Diversity 降低</th><th>AUC</th><th>积分保留</th></tr>
+    <tr><td>0%（基线）</td><td class="hi">0.794</td><td>100%</td></tr>
+    <tr><td>50%</td><td>0.792</td><td>71%</td></tr>
+    <tr><td>90%</td><td>0.788</td><td>33%</td></tr>
   </table>
   <div class="find">逃避检测的代价（积分损失）远超被检测的风险，在经济上不合算。</div>
   <img class="plot" src="data/adversarial_cost_tradeoff.png" onclick="openLightbox(this)">
@@ -359,30 +360,29 @@
 <div class="sec">Supporting: 规则基线 / 女巫分析 / 校准</div>
 
 <details>
-<summary>[27] 规则基线 vs ML <span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">LightGBM / RF / LR</span></summary>
+<summary>[27] 规则基线 vs ML <span class="tag done">Done</span> <span class="tag model">LightGBM / RF / LR</span></summary>
 <div class="body">
   <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: 简单规则 / LR / RF / LightGBM</div>
   <table>
     <tr><th>方法</th><th>AUC</th></tr>
-    <tr><td>LightGBM</td><td class="hi">—</td></tr>
-    <tr><td>Random Forest</td><td class="hi">—</td></tr>
-    <tr><td>Logistic Regression</td><td class="mid">—</td></tr>
-    <tr><td>规则：高买入量</td><td class="mid">—</td></tr>
-    <tr><td>规则：钱包年龄 &lt;30d</td><td class="lo">—</td></tr>
+    <tr><td>LightGBM</td><td class="hi">0.792</td></tr>
+    <tr><td>Random Forest</td><td class="hi">0.791</td></tr>
+    <tr><td>Logistic Regression</td><td class="mid">0.676</td></tr>
+    <tr><td>规则：高买入量</td><td class="lo">0.526</td></tr>
+    <tr><td>规则：钱包年龄 &lt;30d</td><td class="lo">0.507</td></tr>
   </table>
   <img class="plot" src="data/rule_baselines.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[11] 女巫策略聚类 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">K-Means K=3</span></summary>
+<summary>[11] 女巫策略聚类 <span class="tag done">Done</span> <span class="tag model">K-Means K=2</span></summary>
 <div class="body">
-  <div class="note">数据: TXS2 → <strong>仅 9,817 女巫地址</strong>（is_sybil=1）| 模型: K-means K=3</div>
+  <div class="note">数据: TXS2 → <strong>仅 8,890 女巫地址</strong>（is_sybil=1）| 模型: K-means，K=2（Silhouette 0.962 最优）</div>
   <table>
     <tr><th>类型</th><th>数量</th><th>avg buy_count</th><th>Blend 操作</th></tr>
-    <tr><td>散户猎人</td><td>—</td><td>—</td><td>无</td></tr>
-    <tr><td>中量猎人</td><td>—</td><td>—</td><td>无</td></tr>
-    <tr><td>超级机器人</td><td>—</td><td class="hi">—</td><td class="hi">有</td></tr>
+    <tr><td>散户猎人（Cluster 0）</td><td class="hi">8,884</td><td>11</td><td>无</td></tr>
+    <tr><td>超级机器人（Cluster 1）</td><td>6</td><td class="hi">9,099</td><td class="hi">有（avg 4,248）</td></tr>
   </table>
   <img class="plot" src="data/sybil_clustering_plot.png" onclick="openLightbox(this)">
 </div>
@@ -397,42 +397,44 @@
 </details>
 
 <details>
-<summary>[21] 按 Flag 类型留一泛化 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">LightGBM</span></summary>
+<summary>[21] 按 Flag 类型留一泛化 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
   <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM，每次留出一种 flag 类型</div>
   <table>
-    <tr><th>留出类型</th><th>AUC</th></tr>
-    <tr><td>BW（批量提取）</td><td class="lo">—</td></tr>
-    <tr><td>FD（快速转移）</td><td class="lo">—</td></tr>
-    <tr><td>ML（NFT循环）</td><td class="lo">—</td></tr>
-    <tr><td>HF（高频交易）</td><td class="mid">—</td></tr>
+    <tr><th>留出类型</th><th>n_sybil</th><th>AUC</th></tr>
+    <tr><td>BW（批量提取）</td><td>2,225</td><td class="lo">0.126</td></tr>
+    <tr><td>FD（快速转移）</td><td>2,519</td><td class="lo">0.159</td></tr>
+    <tr><td>ML（NFT循环）</td><td>343</td><td class="lo">0.093</td></tr>
+    <tr><td>HF（高频交易）</td><td>490</td><td class="mid">0.388</td></tr>
   </table>
+  <div class="find">各 flag 类型间行为差异大，留出任何一类后模型几乎无法检测该类型。需 multi-flag 联合训练。</div>
   <img class="plot" src="data/flag_type_generalization.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[25] 开放世界检测（BW 未见类型）<span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">LightGBM + IF</span></summary>
+<summary>[25] 开放世界检测（BW 未见类型）<span class="tag done">Done</span> <span class="tag model">LightGBM + IF</span></summary>
 <div class="body">
   <div class="note">数据: nft_feats_labeled_T30.csv（53K，BW 留出训练集）| 模型: LightGBM + Isolation Forest</div>
   <table>
     <tr><th>方法</th><th>AUC（仅 BW 测试）</th></tr>
-    <tr><td>LightGBM（无 BW 训练）</td><td class="lo">—</td></tr>
-    <tr><td>Isolation Forest</td><td class="hi">—</td></tr>
-    <tr><td>两阶段（LGB + IF）</td><td class="hi">—</td></tr>
+    <tr><td>LightGBM（无 BW 训练）</td><td class="lo">0.133</td></tr>
+    <tr><td>Isolation Forest</td><td class="hi">0.740</td></tr>
+    <tr><td>两阶段（LGB + IF）</td><td class="hi">0.740</td></tr>
+    <tr><td>Oracle（含 BW 训练）</td><td class="hi">0.975</td></tr>
   </table>
   <img class="plot" src="data/openworld_detection.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[22] 概率校准 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span> <span class="tag model">LightGBM + Isotonic</span></summary>
+<summary>[22] 概率校准 <span class="tag done">Done</span> <span class="tag model">LightGBM + Isotonic</span></summary>
 <div class="body">
   <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM + Isotonic Regression</div>
   <table>
     <tr><th>模型</th><th>AUC</th><th>Brier Score</th></tr>
-    <tr><td>原始</td><td>—</td><td class="lo">—</td></tr>
-    <tr><td>Isotonic 校准</td><td>—</td><td class="hi">—</td></tr>
+    <tr><td>原始</td><td>0.788</td><td class="lo">0.156</td></tr>
+    <tr><td>Isotonic 校准</td><td class="hi">0.791</td><td class="hi">0.112</td></tr>
   </table>
   <img class="plot" src="data/calibration_curve.png" onclick="openLightbox(this)">
 </div>
