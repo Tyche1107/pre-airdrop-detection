@@ -7,12 +7,13 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import warnings; warnings.filterwarnings('ignore')
 
-DATA_DIR = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset")
+DATA_DIR = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset")
 OUT_DIR = Path("/Users/adelinewen/Desktop/pre-airdrop-detection/data")
 T0, CUTOFF = 1700525735, 1700525735-30*86400
 
-with open(DATA_DIR/"airdrop2_targets.txt") as f:
-    targets = set(l.strip().lower() for l in f if l.strip())
+_flags = pd.read_csv(DATA_DIR / "airdrop_targets_behavior_flags.csv")
+targets = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+del _flags
 
 print("Loading TXS2...")
 import sys; sys.stdout.flush()

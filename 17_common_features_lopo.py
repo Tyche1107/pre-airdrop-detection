@@ -17,7 +17,7 @@ GIT_T0  = 1663804800
 
 def load_blur_generic():
     txs = pd.read_csv(
-        '/Users/adelinewen/Desktop/dataset/blurtx/dataset/TXS2_1662_1861.csv',
+        '/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset/TXS2_1662_1861.csv',
         usecols=['send', 'trade_value', 'timestamp', 'contract_address']
     )
     txs = txs[txs['timestamp'] < BLUR_T0 * 1000]
@@ -39,7 +39,9 @@ def load_blur_generic():
         'wallet_age_days': g['timestamp'].apply(lambda t: (BLUR_T0*1000 - t.min()) / 86400000).values,
         'active_span_days': g['timestamp'].apply(lambda t: (t.max() - t.min()) / 86400000).values,
     })
-    sybil_set = set(open('/Users/adelinewen/Desktop/dataset/blurtx/dataset/airdrop2_targets.txt').read().strip().lower().split('\n'))
+    _flags = pd.read_csv('/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset/airdrop_targets_behavior_flags.csv')
+    sybil_set = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+    del _flags
     feat['is_sybil'] = feat['address'].isin(sybil_set).astype(int)
     feat['protocol'] = 'blur'
     print(f"Blur generic: {len(feat)} rows, sybil_rate={feat.is_sybil.mean():.3f}")

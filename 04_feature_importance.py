@@ -16,9 +16,8 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # ── Paths ────────────────────────────────────────────────────────────────────
-DATA_DIR = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset")
+DATA_DIR = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset")
 TXS_PATH = DATA_DIR / "TXS2_1662_1861.csv"
-TARGETS_PATH = DATA_DIR / "airdrop2_targets.txt"
 FEATURES_PATH = DATA_DIR / "addresses_all_with_loaylty_blend_blur_label319.csv"
 OUT_DIR = Path("/Users/adelinewen/Desktop/pre-airdrop-detection/data")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -61,8 +60,9 @@ print("=== Feature Importance Analysis ===\n")
 print("Loading data...")
 
 # Load targets
-with open(TARGETS_PATH) as f:
-    targets = set(line.strip().lower() for line in f if line.strip())
+_flags = pd.read_csv(DATA_DIR / "airdrop_targets_behavior_flags.csv")
+targets = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+del _flags
 print(f"  Targets: {len(targets):,}")
 
 # Load transactions

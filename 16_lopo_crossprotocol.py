@@ -14,8 +14,8 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # ─── Paths ───────────────────────────────────────────────────────────────────
-BLUR_FEAT   = '/Users/adelinewen/Desktop/dataset/blurtx/dataset/addresses_all_with_loaylty_blend_blur_label319.csv'
-BLUR_SYBIL  = '/Users/adelinewen/Desktop/dataset/blurtx/dataset/airdrop2_targets.txt'
+BLUR_FEAT   = '/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset/addresses_all_with_loaylty_blend_blur_label319.csv'
+BLUR_FLAGS  = '/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset/airdrop_targets_behavior_flags.csv'
 HOP_META    = '/Users/adelinewen/Desktop/dataset/hop/metadata.csv'
 HOP_SYBIL   = '/Users/adelinewen/Desktop/dataset/hop/sybil_addresses.csv'
 HOP_TS      = '/Users/adelinewen/Desktop/dataset/hop/timestamps.csv'
@@ -30,10 +30,12 @@ GIT_T0      = 1663804800   # 2022-09-22 (GR15)
 # ─── Load & engineer per protocol ────────────────────────────────────────────
 def load_blur():
     df = pd.read_csv(BLUR_FEAT)
-    sybil_set = set(open(BLUR_SYBIL).read().strip().lower().split('\n'))
+    _flags = pd.read_csv(BLUR_FLAGS)
+    sybil_set = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+    del _flags
     df['is_sybil'] = df['address'].str.lower().isin(sybil_set).astype(int)
     # Use TXS2 for wallet age via first transaction
-    txs = pd.read_csv('/Users/adelinewen/Desktop/dataset/blurtx/dataset/TXS2_1662_1861.csv',
+    txs = pd.read_csv('/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset/TXS2_1662_1861.csv',
                       usecols=['to', 'send', 'timestamp'])
     txs['address'] = txs['to'].str.lower()
     first_ts = txs.groupby('address')['timestamp'].min().reset_index()

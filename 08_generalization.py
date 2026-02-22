@@ -19,17 +19,17 @@ from sklearn.metrics import roc_auc_score
 import warnings
 warnings.filterwarnings('ignore')
 
-DATA_DIR = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset")
+DATA_DIR = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset")
 TXS_PATH     = DATA_DIR / "TXS2_1662_1861.csv"
-TARGETS_PATH = DATA_DIR / "airdrop2_targets.txt"
 FEATURES_PATH = DATA_DIR / "addresses_all_with_loaylty_blend_blur_label319.csv"
 OUT_DIR = Path("/Users/adelinewen/Desktop/pre-airdrop-detection/data")
 
 T0 = 1700525735
 
 print("Loading data...")
-with open(TARGETS_PATH) as f:
-    targets = set(line.strip().lower() for line in f if line.strip())
+_flags = pd.read_csv(DATA_DIR / "airdrop_targets_behavior_flags.csv")
+targets = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+del _flags
 
 txs = pd.read_csv(TXS_PATH, usecols=['from','send','receive','timestamp','trade_price','event_type','contract_address'],
                   dtype={'timestamp':'Int64','trade_price':'float32'}, low_memory=False)

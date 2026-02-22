@@ -36,7 +36,7 @@ SKF          = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 # ── Load datasets ──────────────────────────────────────────────────────────────
 def load_blur():
-    txs = pd.read_csv(f'{DATA_DIR}/blurtx/dataset/TXS2_1662_1861.csv',
+    txs = pd.read_csv(f'{DATA_DIR}/blurtx/dataset/blurtx/dataset/TXS2_1662_1861.csv',
                       usecols=['send', 'trade_value', 'timestamp', 'contract_address'])
     txs = txs[txs['timestamp'] < BLUR_T0 * 1000]
     txs['address'] = txs['send'].str.lower()
@@ -54,7 +54,9 @@ def load_blur():
         'wallet_age_days': g['timestamp'].apply(lambda t: (BLUR_T0*1000 - t.min()) / 86400000).values,
         'active_span_days': g['timestamp'].apply(lambda t: (t.max() - t.min()) / 86400000).values,
     })
-    sybils = set(open(f'{DATA_DIR}/blurtx/dataset/airdrop2_targets.txt').read().strip().lower().split('\n'))
+    _flags = pd.read_csv(f'{DATA_DIR}/blurtx/dataset/blurtx/dataset/airdrop_targets_behavior_flags.csv')
+    sybils = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+    del _flags
     df['is_sybil'] = df['address'].isin(sybils).astype(int)
     df['protocol'] = 'blur'
     return df[COMMON_FEATS + ['address', 'is_sybil', 'protocol']].reset_index(drop=True)

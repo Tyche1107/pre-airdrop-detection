@@ -11,7 +11,7 @@ from sklearn.metrics import roc_auc_score, average_precision_score
 import warnings; warnings.filterwarnings('ignore')
 import sys
 
-DATA_DIR  = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset")
+DATA_DIR  = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset")
 HOP_DIR   = Path("/Users/adelinewen/Desktop/dataset/hop")
 OUT_DIR   = Path("/Users/adelinewen/Desktop/pre-airdrop-detection/data")
 
@@ -22,8 +22,9 @@ CUT_BLUR = T0_BLUR - 30*86400  # T-30 for Blur (our main window)
 
 # ── 1. Build Blur dataset with GENERIC features only ────────────────────────
 print("=== Building Blur generic features (T-30) ===")
-with open(DATA_DIR/"airdrop2_targets.txt") as f:
-    blur_sybils = set(l.strip().lower() for l in f if l.strip())
+_flags = pd.read_csv(DATA_DIR / "airdrop_targets_behavior_flags.csv")
+blur_sybils = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+del _flags
 
 txs = pd.read_csv(DATA_DIR/"TXS2_1662_1861.csv",
     usecols=['from','send','receive','timestamp','trade_price','event_type'],

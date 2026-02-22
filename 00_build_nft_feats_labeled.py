@@ -28,13 +28,14 @@ WINDOWS = {
 print("Loading correct ground truth (behavior flags)...")
 flags = pd.read_csv(DATA_DIR / "airdrop_targets_behavior_flags.csv")
 flags['address'] = flags['address'].str.lower()
+all_recipients = set(flags['address'])   # all 53,482 airdrop users
 sybil_set = set(flags[
     (flags['bw_flag']==1) | (flags['ml_flag']==1) |
     (flags['fd_flag']==1) | (flags['hf_flag']==1)
 ]['address'])
-print(f"  Total airdrop recipients: {len(flags):,}")
+print(f"  Total airdrop recipients: {len(all_recipients):,}")
 print(f"  Sybil (any flag=1):       {len(sybil_set):,}")
-print(f"  Normal (all flags=0):     {len(flags) - len(sybil_set):,}")
+print(f"  Normal (all flags=0):     {len(all_recipients) - len(sybil_set):,}")
 
 print("Loading TXS2 (may take ~30s)...")
 txs = pd.read_csv(
@@ -96,6 +97,8 @@ def build_features(txs_sub, cutoff):
     # Correct label: any behavior flag == 1
     feat['is_sybil'] = feat['addr'].isin(sybil_set).astype(int)
     feat = feat.rename(columns={'addr': 'address'})
+    # Restrict to airdrop recipients only (53,482 users total)
+    feat = feat[feat['address'].isin(all_recipients)].copy()
     return feat
 
 for wname, cutoff in WINDOWS.items():

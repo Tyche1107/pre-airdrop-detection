@@ -11,7 +11,7 @@ from torch_geometric.nn import GATConv
 import torch.nn.functional as F
 import warnings; warnings.filterwarnings('ignore')
 
-DATA_DIR = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset")
+DATA_DIR = Path("/Users/adelinewen/Desktop/dataset/blurtx/dataset/blurtx/dataset")
 OUT_DIR  = Path("/Users/adelinewen/Desktop/pre-airdrop-detection/data")
 T0       = 1700525735
 CUTOFF   = T0 - 30 * 86400  # T-30
@@ -55,8 +55,9 @@ feat = feat[feat['total_trades'] > 0].merge(
     ext[['address','unique_interactions','blend_in_count','blend_out_count','ratio']],
     left_on='addr', right_on='address', how='left').fillna(0)
 
-with open(DATA_DIR/"airdrop2_targets.txt") as f:
-    targets = set(l.strip().lower() for l in f if l.strip())
+_flags = pd.read_csv(DATA_DIR / "airdrop_targets_behavior_flags.csv")
+targets = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+del _flags
 feat['label'] = feat['addr'].isin(targets).astype(int)
 
 FEAT_COLS = ['buy_count','sell_count','total_trades','buy_value','sell_value','pnl_proxy',
