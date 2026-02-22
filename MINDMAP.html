@@ -205,20 +205,9 @@
 </div>
 </details>
 
-<details>
-<summary>[10] SHAP 分析 <span class="tag done">Done</span> <span class="tag model">LightGBM + SHAP</span></summary>
-<div class="body">
-  <img class="plot" src="data/shap_beeswarm.png" onclick="openLightbox(this)">
-</div>
-</details>
 
-<details>
-<summary>[19] SHAP 跨时间窗对比 <span class="tag done">Done</span> <span class="tag model">LightGBM + SHAP</span></summary>
-<div class="body">
-  <div class="find">T-90: wallet_age_days 权重更高（新批量号特征）。T-7: recent_activity 权重上升（冲刺刷单）。</div>
-  <img class="plot" src="data/shap_temporal_comparison.png" onclick="openLightbox(this)">
-</div>
-</details>
+
+
 
 <details>
 <summary>[06] 特征组消融 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
@@ -337,18 +326,7 @@
 </div>
 </details>
 
-<details>
-<summary>[16] 三协议 LOPO（专属特征）<span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
-<div class="body">
-  <table>
-    <tr><th>训练</th><th>测试</th><th>AUC</th></tr>
-    <tr><td>Hop + Gitcoin</td><td>Blur</td><td class="lo">0.220</td></tr>
-    <tr><td>Blur + Gitcoin</td><td>Hop</td><td class="lo">0.376</td></tr>
-    <tr><td>Blur + Hop</td><td>Gitcoin</td><td class="lo">0.466</td></tr>
-  </table>
-  <div class="warn">跨协议低 AUC 主要原因是特征集不兼容，见 Exp 17。</div>
-</div>
-</details>
+
 
 <details>
 <summary>[14][16b] Blur → Hop 迁移 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
