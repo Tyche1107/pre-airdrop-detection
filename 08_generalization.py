@@ -29,6 +29,7 @@ T0 = 1700525735
 print("Loading data...")
 _flags = pd.read_csv(DATA_DIR / "airdrop_targets_behavior_flags.csv")
 targets = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+all_recipients = set(_flags['address'].str.lower())   # restrict to 53K airdrop users
 del _flags
 
 txs = pd.read_csv(TXS_PATH, usecols=['from','send','receive','timestamp','trade_price','event_type','contract_address'],
@@ -65,6 +66,7 @@ def build_features(cutoff_ts):
     feat = feat[feat['total_trade_count'] > 0].merge(ext, on='addr', how='left')
     feat[['blend_in_count','blend_out_count','blend_net_value','LP_count','unique_interactions','ratio']] = \
         feat[['blend_in_count','blend_out_count','blend_net_value','LP_count','unique_interactions','ratio']].fillna(0)
+    feat = feat[feat['addr'].isin(all_recipients)].copy()   # restrict to 53K airdrop recipients
     feat['label'] = feat['addr'].isin(targets).astype(int)
     return feat
 

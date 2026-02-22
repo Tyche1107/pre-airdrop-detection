@@ -51,6 +51,7 @@ ALL_FEATURES = [
 print("Loading data...")
 _flags = pd.read_csv(DATA_DIR / "airdrop_targets_behavior_flags.csv")
 targets = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
+all_recipients = set(_flags['address'].str.lower())   # 53K airdrop recipients only
 del _flags
 
 txs = pd.read_csv(TXS_PATH, usecols=['from','send','receive','timestamp','trade_price','event_type','contract_address'],
@@ -84,6 +85,7 @@ feat['recent_activity']   = (feat['buy_last_ts'] > (CUTOFF - 30*86400)).astype(i
 feat = feat[feat['total_trade_count'] > 0].merge(ext, on='addr', how='left')
 feat[['blend_in_count','blend_out_count','blend_net_value','LP_count','unique_interactions','ratio']] = \
     feat[['blend_in_count','blend_out_count','blend_net_value','LP_count','unique_interactions','ratio']].fillna(0)
+feat = feat[feat['addr'].isin(all_recipients)].copy()   # restrict to 53K airdrop recipients
 feat['label'] = feat['addr'].isin(targets).astype(int)
 y = feat['label'].values
 print(f"  {len(feat):,} addresses | {y.sum():,} Sybil ({y.mean()*100:.1f}%)\n")

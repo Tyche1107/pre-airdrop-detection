@@ -1,5 +1,5 @@
 method,auc,note
-LightGBM (no BW),0.0606,"supervised, BW unseen"
-Isolation Forest,0.9163,unsupervised
-Two-stage (LGB + IF),0.9163,w_lgb=0.00
-Oracle (LightGBM + BW),0.9865,upper bound
+LightGBM (no BW),0.133,"supervised, BW unseen"
+Isolation Forest,0.7403,unsupervised
+Two-stage (LGB + IF),0.7403,w_lgb=0.00
+Oracle (LightGBM + BW),0.9749,upper bound

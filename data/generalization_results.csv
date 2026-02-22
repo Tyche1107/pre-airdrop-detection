@@ -1,4 +1,4 @@
 experiment,auc,note
-Standard 5-fold CV (T-30),0.904,Baseline
-"Temporal split (train T-90, test T-30)",0.8983,Generalization test
-Population split (50% Sybil unseen),0.7436,Unknown Sybil generalization
+Standard 5-fold CV (T-30),0.7916,Baseline
+"Temporal split (train T-90, test T-30)",0.7979,Generalization test
+Population split (50% Sybil unseen),0.4291,Unknown Sybil generalization

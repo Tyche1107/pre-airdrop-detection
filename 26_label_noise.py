@@ -32,11 +32,11 @@ X = df[FEATURE_COLS].values
 y = df['is_sybil'].values
 
 NOISE_LEVELS = [0.0, 0.05, 0.10, 0.15, 0.20]
-N_REPEATS    = 5
+N_REPEATS    = 3
 SKF          = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 lgb_params = dict(
-    n_estimators=500, learning_rate=0.05, num_leaves=63,
+    n_estimators=200, learning_rate=0.05, num_leaves=63,
     class_weight='balanced', random_state=42, n_jobs=-1, verbose=-1
 )
 

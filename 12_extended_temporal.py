@@ -61,6 +61,7 @@ for wname, cutoff in WINDOWS.items():
     feat=feat[feat['total_trade_count']>0].merge(ext,on='addr',how='left')
     for c in ['blend_in_count','blend_out_count','blend_net_value','LP_count','unique_interactions','ratio']:
         feat[c]=feat[c].fillna(0)
+    feat=feat[feat['addr'].isin(all_recipients)].copy()   # restrict to 53K airdrop recipients
     feat['label']=feat['addr'].isin(targets).astype(int)
     FCOLS=['buy_count','sell_count','tx_count','total_trade_count','buy_value','sell_value','pnl_proxy',
            'buy_collections','unique_interactions','sell_ratio','wallet_age_days','days_since_last_buy',
