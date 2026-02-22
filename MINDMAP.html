@@ -53,6 +53,18 @@
 </div>
 
 <!-- ===== 数据集 ===== -->
+<div class="sec">核心结论</div>
+<div class="body" style="padding:10px 16px 14px;background:var(--bg2);border-radius:8px;margin-bottom:10px;border-left:3px solid var(--purple)">
+  <ol style="margin:0;padding-left:1.4em;line-height:2;font-size:13px;color:var(--text2)">
+    <li><strong>事前检测可行。</strong> 纯行为特征 T-30 AUC <strong>0.793</strong>，差 ARTEMIS 事后 GNN（0.803）仅 <strong>0.010</strong>。</li>
+    <li><strong>信号跨时间稳定。</strong> T-0 到 T-90 AUC 仅降 0.009（Blur）/ 0.0006（LZ）。猎人从开始刷积分就留下可识别指纹。</li>
+    <li><strong>跨协议泛化成立。</strong> LZ T-30 AUC <strong>0.946</strong>，超过 ARTEMIS 基线。Zero-shot 0.434，1% 微调 → 0.982。</li>
+    <li><strong>女巫行为极度分化。</strong> K=2 聚类：散户猎人 8,884 个 vs 超级 bot 6 个（avg 9,099 笔）。四类 flag（BW/ML/FD/HF）几乎不重叠，留一检测 AUC 0.09-0.39。</li>
+    <li><strong>GNN 依赖空投时序，LightGBM 不依赖。</strong> 事前 ArtemisNet 从 0.976 跌至 0.586；行为特征模型不受时序影响。</li>
+    <li><strong>开放世界两阶段可行。</strong> IF 恢复未见类型 AUC 0.740（纯监督 0.133），Oracle 上界 0.975。</li>
+  </ol>
+</div>
+
 <div class="sec">数据集</div>
 
 <details>

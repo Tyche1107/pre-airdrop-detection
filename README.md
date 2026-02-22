@@ -2,6 +2,20 @@
 
 Detecting airdrop hunters before an airdrop using on-chain behavioral features. Built on Blur NFT Season 2 data with validation on LayerZero.
 
+## Core Conclusions
+
+1. **Pre-airdrop detection is viable.** Behavioral features alone (no knowledge of airdrop outcome) achieve AUC 0.793 at T-30, only 0.010 below ARTEMIS post-hoc GNN (0.803) that sees the full airdrop transfer graph.
+
+2. **Signal is stable across time.** AUC drops 0.009 from T-0 to T-90 on Blur; 0.0006 on LayerZero. Sybil behavioral fingerprints are established early and persist.
+
+3. **Cross-protocol validation holds.** LayerZero T-30 AUC 0.946 exceeds ARTEMIS baseline. Common behavioral features generalize; zero-shot transfer (Blur to LayerZero) reaches 0.434, 1% fine-tuning recovers to 0.982.
+
+4. **Sybil behavior is highly heterogeneous.** K-means (K=2) reveals two distinct clusters: 8,884 retail hunters (low-frequency, no Blend) and 6 mega-bots (avg 9,099 trades, 4,248 Blend operations). Flag types (BW/ML/FD/HF) are nearly non-overlapping: leaving out any single type drops detection AUC to 0.09-0.39.
+
+5. **GNNs are timing-dependent; LightGBM is not.** Pre-airdrop ArtemisNet drops from 0.976 to 0.586 due to missing post-airdrop transfer edges. Behavioral feature models are unaffected by timing.
+
+6. **Open-world detection is feasible with two-stage design.** Isolation Forest recovers AUC 0.740 on unseen sybil types vs. 0.133 for supervised-only; oracle upper bound is 0.975.
+
 ## Key Results
 
 | Method | Data timing | Dataset | AUC |
