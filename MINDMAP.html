@@ -65,6 +65,27 @@
   </ol>
 </div>
 
+<div class="sec">数据来源 &amp; 模型</div>
+<div class="body" style="padding:10px 16px 14px;background:var(--bg2);border-radius:8px;margin-bottom:10px;">
+  <table>
+    <tr><th>数据集</th><th>规模</th><th>标签来源</th><th>用途</th></tr>
+    <tr><td>Blur NFT Season 2</td><td>53,482 空投用户 / 9,817 sybil / 43,665 normal</td><td>behavior_flags（bw/ml/fd/hf）</td><td>主实验 Q1-Q5</td></tr>
+    <tr><td>LayerZero ETH</td><td>29,870 地址</td><td>官方 Proof-of-Sybil 名单</td><td>第二验证 Exp 28, 24</td></tr>
+    <tr><td>Hop Protocol</td><td>~4K 地址</td><td>官方 sybil 名单</td><td>跨协议 LOPO Exp 17, 16</td></tr>
+    <tr><td>Gitcoin</td><td>39,962 地址</td><td>SADScore</td><td>跨协议 LOPO Exp 17, 18</td></tr>
+    <tr><td>ARTEMIS GNN</td><td>Blur-main/*.pt</td><td>同 Blur（post-hoc）</td><td>对比基线 Exp 09, 15</td></tr>
+  </table>
+  <table style="margin-top:10px;">
+    <tr><th>模型</th><th>参数</th><th>实验</th></tr>
+    <tr><td>LightGBM</td><td>5-fold CV, n_estimators=500, early_stop=50</td><td>Exp 03-08, 10-14, 17-19, 21-23, 25-28</td></tr>
+    <tr><td>GraphSAGE (ArtemisNet)</td><td>2层, hidden=128, 预训练权重</td><td>Exp 09, 15</td></tr>
+    <tr><td>K-Means</td><td>K=2 (Silhouette 0.962), StandardScaler</td><td>Exp 11, 20</td></tr>
+    <tr><td>Isolation Forest</td><td>contamination=0.18, n_estimators=200</td><td>Exp 25</td></tr>
+    <tr><td>Isotonic Regression</td><td>CalibratedClassifierCV</td><td>Exp 22</td></tr>
+    <tr><td>Random Forest / LR</td><td>RF n=300 / LR C=1.0</td><td>Exp 27（基线对比）</td></tr>
+  </table>
+</div>
+
 <div class="sec">数据集</div>
 
 <details>
