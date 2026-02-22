@@ -56,8 +56,10 @@ print()
 # ── Load airdrop targets (ground truth) ─────────────────────────────────────
 print("Loading airdrop targets...")
 _flags = pd.read_csv(DATA_DIR / "airdrop_targets_behavior_flags.csv")
+all_recipients = set(_flags['address'].str.lower())   # all 53,482 airdrop users
 targets = set(_flags[(_flags['bw_flag']==1)|(_flags['ml_flag']==1)|(_flags['fd_flag']==1)|(_flags['hf_flag']==1)]['address'].str.lower())
 del _flags
+print(f"  Total airdrop recipients: {len(all_recipients):,}")
 print(f"  Airdrop hunters (any_flag ground truth): {len(targets):,}")
 
 # ── Load & preprocess TXS2 ──────────────────────────────────────────────────
@@ -214,6 +216,9 @@ for window_name, cutoff_ts in WINDOWS.items():
     feat[ext_cols_fill] = feat[ext_cols_fill].fillna(0)
     # Fix blend_net_value: raw value is in WEI, convert to ETH
     feat['blend_net_value_eth'] = feat['blend_net_value'] / 1e18
+
+    # Restrict to airdrop recipients only (53,482 total)
+    feat = feat[feat['addr'].isin(all_recipients)].copy()
 
     # Label
     feat['label'] = feat['addr'].isin(targets).astype(int)
