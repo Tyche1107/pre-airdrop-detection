@@ -130,7 +130,6 @@
 <details>
 <summary>ARTEMIS GNN 数据 <span class="tag data">对比基线</span></summary>
 <div class="body">
-  <div class="note">Blur-main/Artemis/data/*.pt — PyTorch 预处理图数据（node features, edge_index, y.pt），用于 Exp 09 GNN 复现</div>
 </div>
 </details>
 
@@ -140,7 +139,6 @@
 <details open>
 <summary>[03] 时间消融 T-0 到T-90 <span class="tag done">Done</span> <span class="tag">T-30 AUC 0.793</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: TXS2 → 53K 空投用户 | 标签: behavior_flags (9,817 sybil) | 模型: LightGBM 5-fold CV</div>
   <table>
     <tr><th>窗口</th><th>活跃人数</th><th>女巫率</th><th>AUC</th><th>F1</th></tr>
     <tr><td>T-0</td><td>50,564</td><td>18.0%</td><td class="hi">0.798</td><td>0.539</td></tr>
@@ -159,7 +157,6 @@
 <details>
 <summary>[12] 扩展消融 T-120 到 T-180 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: TXS2 → 53K | 模型: LightGBM</div>
   <table>
     <tr><th>窗口</th><th>AUC</th></tr>
     <tr><td>T-120</td><td class="hi">0.786</td></tr>
@@ -174,7 +171,6 @@
 <details>
 <summary>[05] Precision-Recall 分析 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: TXS2 → 53K | 模型: LightGBM T-30</div>
   <img class="plot" src="data/pr_and_comparison_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
@@ -182,7 +178,6 @@
 <details>
 <summary>[09][15] GNN 事后 vs 事前对比 <span class="tag done">Done</span> <span class="tag model">GraphSAGE / GNN</span></summary>
 <div class="body">
-  <div class="note">Exp 09: Artemis/*.pt | Exp 15: TXS2 → 53K | 模型: GraphSAGE vs LightGBM</div>
   <table>
     <tr><th>模型</th><th>数据时机</th><th>AUC</th></tr>
     <tr><td>ArtemisNet GNN（复现）</td><td>事后</td><td class="hi">0.976</td></tr>
@@ -199,7 +194,6 @@
 <details>
 <summary>[04] 特征重要性（跨时间窗）<span class="tag done">Done</span> <span class="tag model">LightGBM + SHAP</span></summary>
 <div class="body">
-  <div class="note">数据: TXS2 → 53K | 模型: LightGBM SHAP gain</div>
   <table>
     <tr><th>特征</th><th>T-0</th><th>T-30</th><th>T-90</th></tr>
     <tr><td>buy_collections（NFT多样性）</td><td class="hi">48%</td><td>44%</td><td>38%</td></tr>
@@ -214,7 +208,6 @@
 <details>
 <summary>[10] SHAP 分析 <span class="tag done">Done</span> <span class="tag model">LightGBM + SHAP</span></summary>
 <div class="body">
-  <div class="note">数据: TXS2 → 53K | 模型: LightGBM T-30</div>
   <img class="plot" src="data/shap_beeswarm.png" onclick="openLightbox(this)">
 </div>
 </details>
@@ -222,7 +215,6 @@
 <details>
 <summary>[19] SHAP 跨时间窗对比 <span class="tag done">Done</span> <span class="tag model">LightGBM + SHAP</span></summary>
 <div class="body">
-  <div class="note">数据: nft_feats_labeled_T30.csv + T90.csv（53K）| 模型: LightGBM</div>
   <div class="find">T-90: wallet_age_days 权重更高（新批量号特征）。T-7: recent_activity 权重上升（冲刺刷单）。</div>
   <img class="plot" src="data/shap_temporal_comparison.png" onclick="openLightbox(this)">
 </div>
@@ -231,7 +223,6 @@
 <details>
 <summary>[06] 特征组消融 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: TXS2 → 53K | 模型: LightGBM，每组独立训练 | 5组: Activity / Diversity / Behavioral / Volume / DeFi</div>
   <table>
     <tr><th>特征组</th><th>AUC（仅此组）</th></tr>
     <tr><td>ALL（全部特征）</td><td class="hi">0.7904</td></tr>
@@ -248,7 +239,6 @@
 <details>
 <summary>[07] 图特征增强 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: TXS2 + fund_graph_edges.csv → 53K | 模型: LightGBM</div>
   <table>
     <tr><th>特征集</th><th>AUC</th></tr>
     <tr><td>行为特征</td><td class="hi">0.904</td></tr>
@@ -265,7 +255,6 @@
 <details>
 <summary>[08] 泛化实验 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: TXS2 → 53K | 模型: LightGBM</div>
   <table>
     <tr><th>实验</th><th>AUC</th></tr>
     <tr><td>标准 5-fold T-30</td><td class="hi">0.7916</td></tr>
@@ -279,7 +268,6 @@
 <details>
 <summary>[26] 标签噪声鲁棒性 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM | 随机翻转 is_sybil 标签</div>
   <table>
     <tr><th>噪声比例</th><th>AUC</th><th>vs 基线</th></tr>
     <tr><td>0%</td><td class="hi">0.797</td><td>基线</td></tr>
@@ -293,7 +281,6 @@
 <details>
 <summary>[13][23] 对抗鲁棒性 + 逃避成本 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM | 扰动 NFT diversity 特征</div>
   <table>
     <tr><th>Diversity 降低</th><th>AUC</th><th>积分保留</th></tr>
     <tr><td>0%（基线）</td><td class="hi">0.794</td><td>100%</td></tr>
@@ -311,7 +298,6 @@
 <details open>
 <summary>[28] LayerZero 时间消融 <span class="tag done">Done</span> <span class="tag">T-30 AUC 0.946</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: lz_temporal_features.csv（ETH-only，29,870 地址）| 标签: LZ Proof-of-Sybil | 模型: LightGBM</div>
   <table>
     <tr><th>窗口</th><th>活跃地址</th><th>AUC</th></tr>
     <tr><td>T-30</td><td>17,072</td><td class="hi">0.9462</td></tr>
@@ -326,7 +312,6 @@
 <details>
 <summary>[24] LayerZero LOPO <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: Blur(TXS2/behavior_flags) + Hop(metadata) + LZ(lz_temporal) | 模型: LightGBM LOPO</div>
   <table>
     <tr><th>训练</th><th>测试</th><th>AUC</th></tr>
     <tr><td>Blur + Hop</td><td>LZ（桥→桥）</td><td class="mid">0.567</td></tr>
@@ -355,7 +340,6 @@
 <details>
 <summary>[16] 三协议 LOPO（专属特征）<span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: Blur(TXS2) + Gitcoin(onchain) + Hop(metadata) | 模型: LightGBM LOPO</div>
   <table>
     <tr><th>训练</th><th>测试</th><th>AUC</th></tr>
     <tr><td>Hop + Gitcoin</td><td>Blur</td><td class="lo">0.220</td></tr>
@@ -383,7 +367,6 @@
 <details>
 <summary>[18] Gitcoin 域内分析 <span class="tag done">Done</span> <span class="tag model">LightGBM + SHAP</span></summary>
 <div class="body">
-  <div class="note">数据: gitcoin/onchain + erc20_features.csv（39,962 地址）| 标签: SADScore | 模型: LightGBM SHAP</div>
   <div class="warn">域内 AUC 0.599。SADScore 标注的是链上整体异常地址，捐赠特征 SHAP 权重近 0，唯一信号是基础链上指标。</div>
   <img class="plot" src="data/gitcoin_shap.png" onclick="openLightbox(this)">
 </div>
@@ -395,7 +378,6 @@
 <details>
 <summary>[27] 规则基线 vs ML <span class="tag done">Done</span> <span class="tag model">LightGBM / RF / LR</span></summary>
 <div class="body">
-  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: 简单规则 / LR / RF / LightGBM</div>
   <table>
     <tr><th>方法</th><th>AUC</th></tr>
     <tr><td>LightGBM</td><td class="hi">0.792</td></tr>
@@ -424,7 +406,6 @@
 <details>
 <summary>[20] 聚类 K 值选择 <span class="tag done">Done</span> <span class="tag model">K-Means</span></summary>
 <div class="body">
-  <div class="note">数据: nft_feats_labeled_T30.csv → is_sybil=1（仅女巫）| 方法: Elbow + Silhouette</div>
   <img class="plot" src="data/clustering_k_selection.png" onclick="openLightbox(this)">
 </div>
 </details>
@@ -432,7 +413,6 @@
 <details>
 <summary>[21] 按 Flag 类型留一泛化 <span class="tag done">Done</span> <span class="tag model">LightGBM</span></summary>
 <div class="body">
-  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM，每次留出一种 flag 类型</div>
   <table>
     <tr><th>留出类型</th><th>n_sybil</th><th>AUC</th></tr>
     <tr><td>BW（批量提取）</td><td>2,225</td><td class="lo">0.126</td></tr>
@@ -448,7 +428,6 @@
 <details>
 <summary>[25] 开放世界检测（BW 未见类型）<span class="tag done">Done</span> <span class="tag model">LightGBM + IF</span></summary>
 <div class="body">
-  <div class="note">数据: nft_feats_labeled_T30.csv（53K，BW 留出训练集）| 模型: LightGBM + Isolation Forest</div>
   <table>
     <tr><th>方法</th><th>AUC（仅 BW 测试）</th></tr>
     <tr><td>LightGBM（无 BW 训练）</td><td class="lo">0.133</td></tr>
@@ -463,7 +442,6 @@
 <details>
 <summary>[22] 概率校准 <span class="tag done">Done</span> <span class="tag model">LightGBM + Isotonic</span></summary>
 <div class="body">
-  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM + Isotonic Regression</div>
   <table>
     <tr><th>模型</th><th>AUC</th><th>Brier Score</th></tr>
     <tr><td>原始</td><td>0.788</td><td class="lo">0.156</td></tr>
