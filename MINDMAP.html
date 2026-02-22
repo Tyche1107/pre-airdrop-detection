@@ -26,6 +26,7 @@
   .tag{font-size:11px;background:var(--bg3);color:var(--text4);border-radius:3px;padding:1px 6px;font-weight:normal;margin-left:4px;}
   .tag.done{background:#1a3a1a;color:var(--green);}
   .tag.data{background:#1a2a3a;color:#63b3ed;}
+  .tag.pending{background:#3a2a00;color:var(--yellow);}
   table{border-collapse:collapse;margin:6px 0;font-size:12px;width:100%;max-width:680px;}
   th{color:var(--purple);text-align:left;padding:3px 12px 3px 0;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;}
   td{padding:3px 12px 3px 0;color:var(--text2);border-bottom:1px solid var(--border);}
@@ -34,7 +35,7 @@
   .note{background:var(--bg2);border-left:3px solid #4a90d9;padding:5px 12px;border-radius:0 5px 5px 0;margin:6px 0;font-size:12px;color:var(--text3);}
   .warn{background:var(--bg2);border-left:3px solid var(--red);padding:5px 12px;border-radius:0 5px 5px 0;margin:6px 0;font-size:12px;color:var(--text);}
   img.plot{width:100%;max-width:760px;border-radius:6px;margin:8px 0 3px;border:1px solid var(--border);cursor:zoom-in;display:block;}
-  .sec{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4a90d9;margin:18px 0 6px;font-weight:700;border-bottom:1px solid var(--border2);padding-bottom:4px;}
+  .sec{font-size:12px;font-weight:700;color:var(--purple);margin:20px 0 6px;padding:6px 12px;background:var(--bg2);border-radius:5px;border-left:3px solid var(--purple);}
   .lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;align-items:center;justify-content:center;cursor:zoom-out;}
   .lightbox.open{display:flex;}
   .lightbox img{max-width:92vw;max-height:92vh;border-radius:8px;}
@@ -44,7 +45,7 @@
 
 <h1>Pre-Airdrop Sybil Detection — Experiment Map</h1>
 <div class="controls">
-  <input type="text" placeholder="搜索..." oninput="doSearch(this.value)">
+  <input type="text" placeholder="搜索实验..." oninput="doSearch(this.value)">
   <button class="btn" onclick="setAll(true)">全部展开</button>
   <button class="btn" onclick="setAll(false)">全部折叠</button>
   <button class="btn" onclick="toggleTheme()">亮 / 暗</button>
@@ -52,330 +53,314 @@
 
 <!-- ===== 数据集 ===== -->
 <div class="sec">数据集</div>
+
 <details>
-<summary>Blur NFT（主数据集）<span class="tag data">53K airdrop recipients</span></summary>
+<summary>Blur NFT Season 2 <span class="tag data">主数据集</span><span class="tag data">53K airdrop users</span></summary>
 <div class="body">
   <table>
-    <tr><th>文件</th><th>内容</th><th>规模</th></tr>
-    <tr><td>TXS2_1662_1861.csv</td><td>全体 Blur 用户 NFT 交易记录 Feb-Nov 2023</td><td>3.2M 行</td></tr>
+    <tr><th>文件</th><th>用途</th><th>规模</th></tr>
+    <tr><td>TXS2_1662_1861.csv</td><td>特征提取来源（全体 Blur 用户交易）</td><td>3.2M 行，251K 地址</td></tr>
     <tr><td>addresses_all_with_loaylty_blend_blur_label319.csv</td><td>Blend / LP / unique_interactions 扩展特征</td><td>251,755 地址</td></tr>
-    <tr><td>airdrop_targets_behavior_flags.csv</td><td>Season 2 空投用户 + 4 类行为 flag（ground truth）</td><td>53,482 地址</td></tr>
+    <tr><td>airdrop_targets_behavior_flags.csv</td><td>Ground truth：4 类行为 flag</td><td>53,482 地址</td></tr>
   </table>
   <div class="note">
-    Ground truth 说明：bw_flag（批量提取）/ ml_flag（NFT循环）/ fd_flag（快速转移）/ hf_flag（高频交易）<br>
-    任一 flag=1 → sybil：9,817 人 | 全0 → normal：43,665 人<br>
-    训练集 = 53K 空投用户（非全体TXS2用户）
+    bw_flag: 批量提取（non-CEX funder >= 5 targets） / ml_flag: NFT 循环洗钱（cycle >= 5） / fd_flag: 快速转移 / hf_flag: 高频交易<br>
+    Sybil (任一 flag=1): 9,817 | Normal (全0): 43,665 | 训练集限定为 53K 空投用户，不含其余 TXS2 用户
   </div>
 </div>
 </details>
 
 <details>
-<summary>LayerZero<span class="tag data">29,870 地址 ETH-only</span></summary>
+<summary>LayerZero <span class="tag data">第二数据集</span><span class="tag data">29,870 地址 ETH-only</span></summary>
 <div class="body">
   <table>
-    <tr><th>文件</th><th>内容</th></tr>
-    <tr><td>layerzero/lz_temporal_features.csv</td><td>ETH 链行为特征（Alchemy API），T-30/60/90 切分</td></tr>
-    <tr><td>LayerZero Proof-of-Sybil</td><td>官方 sybil 地址列表（ground truth）</td></tr>
+    <tr><th>文件</th><th>用途</th></tr>
+    <tr><td>layerzero/lz_temporal_features.csv</td><td>T-30/60/90 时序特征（Alchemy API，ETH mainnet）</td></tr>
+    <tr><td>LayerZero Proof-of-Sybil</td><td>官方 sybil 地址名单（ground truth）</td></tr>
   </table>
-  <div class="note">ARB + POLY 网络暂未启用，特征仅覆盖 ETH 侧。开通后重跑预计提升。</div>
+  <div class="note">ARB + POLY 网络未启用，当前特征仅 ETH 侧。</div>
 </div>
 </details>
 
 <details>
-<summary>Hop + Gitcoin（跨协议对比）</summary>
+<summary>Hop + Gitcoin <span class="tag data">跨协议对比</span></summary>
 <div class="body">
   <table>
-    <tr><th>数据集</th><th>文件</th><th>规模</th></tr>
-    <tr><td>Hop</td><td>hop/metadata.csv, hop/sybil_addresses.csv</td><td>官方 sybil 名单</td></tr>
-    <tr><td>Gitcoin</td><td>gitcoin/onchain_features.csv, erc20_features.csv</td><td>39,962 地址 + SADScore</td></tr>
+    <tr><th>协议</th><th>特征文件</th><th>标签</th></tr>
+    <tr><td>Hop</td><td>hop/metadata.csv, timestamps.csv</td><td>hop/sybil_addresses.csv（官方）</td></tr>
+    <tr><td>Gitcoin</td><td>gitcoin/onchain_features.csv, erc20_features.csv</td><td>SADScore（39,962 地址）</td></tr>
   </table>
 </div>
 </details>
 
 <details>
-<summary>ARTEMIS GNN 数据</summary>
+<summary>ARTEMIS GNN 数据 <span class="tag data">对比基线</span></summary>
 <div class="body">
-  <div class="note">Blur-main/Artemis/data/*.pt — PyTorch 预处理图数据，用于 Exp 09 GNN 复现</div>
+  <div class="note">Blur-main/Artemis/data/*.pt — PyTorch 预处理图数据（node features, edge_index, y.pt），用于 Exp 09 GNN 复现</div>
 </div>
 </details>
 
-<!-- ===== 主结果 ===== -->
-<div class="sec">主结果</div>
+<!-- ===== Q1 ===== -->
+<div class="sec">Q1: 能不能提前检测？</div>
 
 <details open>
-<summary>[03] 时间消融（主实验）<span class="tag done">Done</span><span class="tag">T-30 AUC 0.793</span></summary>
+<summary>[03] 时间消融 T-0 到T-90 <span class="tag done">Done</span> <span class="tag">T-30 AUC 0.793</span></summary>
 <div class="body">
-  <div class="note">数据：TXS2 → 特征提取 → 限定53K空投用户 | 模型：LightGBM 5-fold CV | 标签：behavior_flags</div>
+  <div class="note">数据: TXS2 → 53K 空投用户 | 标签: behavior_flags (9,817 sybil) | 模型: LightGBM 5-fold CV</div>
   <table>
-    <tr><th>窗口</th><th>人数</th><th>女巫率</th><th>AUC</th><th>F1</th></tr>
-    <tr><td>T-0（空投当天）</td><td>50,564</td><td>18.0%</td><td class="hi">0.798</td><td>0.539</td></tr>
+    <tr><th>窗口</th><th>活跃人数</th><th>女巫率</th><th>AUC</th><th>F1</th></tr>
+    <tr><td>T-0</td><td>50,564</td><td>18.0%</td><td class="hi">0.798</td><td>0.539</td></tr>
     <tr><td>T-7</td><td>50,461</td><td>18.0%</td><td class="hi">0.796</td><td>0.533</td></tr>
     <tr><td>T-14</td><td>50,239</td><td>17.9%</td><td class="hi">0.796</td><td>0.532</td></tr>
     <tr><td>T-30</td><td>49,646</td><td>17.9%</td><td class="hi">0.793</td><td>0.529</td></tr>
     <tr><td>T-60</td><td>48,801</td><td>17.7%</td><td class="hi">0.791</td><td>0.521</td></tr>
     <tr><td>T-90</td><td>47,706</td><td>17.4%</td><td class="hi">0.789</td><td>0.520</td></tr>
   </table>
-  <div class="find">T-0 到 T-90 AUC 仅降 0.009，信号在空投前 3 个月已稳定存在。</div>
-  <div class="note">对比：ARTEMIS（事后 GNN）AUC 0.803。本文用事前行为特征达到 0.793，差距 0.010。</div>
+  <div class="find">T-0 到 T-90 AUC 仅降 0.009。事前行为信号稳定，猎人从开始刷积分就留下可识别的指纹。</div>
+  <div class="note">ARTEMIS 事后 GNN AUC 0.803；本文用纯事前行为特征达到 0.793，差距 0.010。</div>
   <img class="plot" src="data/temporal_ablation_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[02] 模型对比<span class="tag done">Done</span></summary>
+<summary>[12] 扩展消融 T-120 到 T-180 <span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：nft_feats_labeled_T30.csv（53K）| 模型：LightGBM vs ARTEMIS GNN</div>
-  <table>
-    <tr><th>模型</th><th>数据时机</th><th>AUC</th></tr>
-    <tr><td>ARTEMIS GNN（论文）</td><td>事后</td><td>0.803</td></tr>
-    <tr><td>LightGBM T-30（本文）</td><td>事前 30d</td><td class="hi">0.793</td></tr>
-    <tr><td>LightGBM T-90（本文）</td><td>事前 90d</td><td class="hi">0.789</td></tr>
-    <tr><td>ArtemisNet GNN（事后复现）</td><td>事后</td><td>0.976</td></tr>
-    <tr><td>ArtemisNet GNN（T-30 事前）</td><td>事前</td><td class="lo">0.586</td></tr>
-  </table>
-  <div class="find">GNN 需要空投后的 transfer graph 才能工作；事前图残缺，AUC 降至 0.586。LightGBM 用纯行为特征在事前达到接近 ARTEMIS 的性能。</div>
-  <img class="plot" src="data/model_comparison_plot.png" onclick="openLightbox(this)">
-</div>
-</details>
-
-<details>
-<summary>[12] 扩展消融 T-120 到 T-180<span class="tag done">Done</span></summary>
-<div class="body">
-  <div class="note">数据：TXS2 → 53K | 模型：LightGBM</div>
+  <div class="note">数据: TXS2 → 53K | 模型: LightGBM</div>
   <table>
     <tr><th>窗口</th><th>AUC</th></tr>
     <tr><td>T-120</td><td class="hi">0.786</td></tr>
     <tr><td>T-150</td><td class="hi">0.784</td></tr>
     <tr><td>T-180</td><td class="hi">0.780</td></tr>
   </table>
-  <div class="find">信号在 6 个月前仍然有效，猎人从激励期开始就在操作。</div>
+  <div class="find">6 个月前仍有效，猎人在激励期开始时就已经在操作。</div>
   <img class="plot" src="data/temporal_ablation_extended_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[05] Precision-Recall 分析<span class="tag done">Done</span></summary>
+<summary>[05] Precision-Recall 分析 <span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：TXS2 → 53K | 模型：LightGBM T-30</div>
+  <div class="note">数据: TXS2 → 53K | 模型: LightGBM T-30</div>
   <img class="plot" src="data/pr_and_comparison_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
 
-<!-- ===== 特征分析 ===== -->
-<div class="sec">特征分析</div>
-
 <details>
-<summary>[01] 特征构建<span class="tag done">Done</span></summary>
+<summary>[09][15] GNN 事后 vs 事前对比 <span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：TXS2 + ext | 输出：nft_feats_labeled_T7/30/90.csv（53K，17.9% sybil）</div>
+  <div class="note">Exp 09: Artemis/*.pt | Exp 15: TXS2 → 53K | 模型: GraphSAGE vs LightGBM</div>
   <table>
-    <tr><th>特征组</th><th>特征</th></tr>
-    <tr><td>Activity</td><td>tx_count, active_days, tx_per_day, first_tx_days_before</td></tr>
-    <tr><td>Diversity</td><td>buy_collections, collection_entropy, buy_sell_ratio</td></tr>
-    <tr><td>Volume</td><td>buy_value, sell_value, avg_tx_value</td></tr>
-    <tr><td>Behavioral</td><td>sell_ratio, pnl_proxy, wallet_age_days, recent_activity</td></tr>
-    <tr><td>DeFi</td><td>blend_in/out, LP_count, unique_interactions</td></tr>
+    <tr><th>模型</th><th>数据时机</th><th>AUC</th></tr>
+    <tr><td>ArtemisNet GNN（复现）</td><td>事后</td><td class="hi">0.976</td></tr>
+    <tr><td>ArtemisNet GNN（T-30 事前）</td><td>事前</td><td class="lo">0.586</td></tr>
+    <tr><td>LightGBM（本文，T-30）</td><td>事前</td><td class="hi">0.793</td></tr>
   </table>
+  <div class="warn">GNN 依赖空投后产生的 transfer edge；事前图残缺，性能降至 0.586。LightGBM 用行为特征绕过此限制。</div>
 </div>
 </details>
+
+<!-- ===== Q2 ===== -->
+<div class="sec">Q2: 哪些特征有效？</div>
 
 <details>
 <summary>[04] 特征重要性（跨时间窗）<span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：TXS2 → 53K | 模型：LightGBM SHAP</div>
+  <div class="note">数据: TXS2 → 53K | 模型: LightGBM SHAP gain</div>
   <table>
     <tr><th>特征</th><th>T-0</th><th>T-30</th><th>T-90</th></tr>
     <tr><td>buy_collections（NFT多样性）</td><td class="hi">48%</td><td>44%</td><td>38%</td></tr>
     <tr><td>unique_interactions</td><td>7%</td><td>14%</td><td class="hi">22%</td></tr>
     <tr><td>buy_value</td><td>12%</td><td>12%</td><td>12%</td></tr>
   </table>
-  <div class="find">NFT集合多样性稳定第一。越早期，unique_interactions 权重越高。</div>
+  <div class="find">NFT 集合多样性稳定第一。越早期 unique_interactions 权重越高，模型更依赖合约交互广度而非交易量。</div>
   <img class="plot" src="data/feature_stability_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[06] 特征组消融<span class="tag done">Done</span></summary>
+<summary>[10] SHAP 分析 <span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：TXS2 → 53K | 模型：LightGBM，每组独立训练</div>
-  <table>
-    <tr><th>特征组</th><th>AUC</th></tr>
-    <tr><td>Activity</td><td class="hi">—</td></tr>
-    <tr><td>Diversity</td><td class="hi">—</td></tr>
-    <tr><td>Behavioral</td><td>—</td></tr>
-    <tr><td>Volume</td><td>—</td></tr>
-    <tr><td>DeFi（Blend）</td><td class="lo">—</td></tr>
-  </table>
-  <div class="note">数字待子代理重跑后更新</div>
-  <img class="plot" src="data/ablation_plot.png" onclick="openLightbox(this)">
-</div>
-</details>
-
-<details>
-<summary>[10] SHAP 分析<span class="tag done">Done</span></summary>
-<div class="body">
-  <div class="note">数据：TXS2 → 53K | 模型：LightGBM T-30</div>
+  <div class="note">数据: TXS2 → 53K | 模型: LightGBM T-30</div>
   <img class="plot" src="data/shap_beeswarm.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[19] SHAP 跨时间窗对比<span class="tag done">Done</span></summary>
+<summary>[19] SHAP 跨时间窗对比 <span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：nft_feats_labeled_T30/T90.csv（53K）| 模型：LightGBM</div>
+  <div class="note">数据: nft_feats_labeled_T30.csv + T90.csv（53K）| 模型: LightGBM</div>
+  <div class="find">T-90: wallet_age_days 权重更高（新批量号特征）。T-7: recent_activity 权重上升（冲刺刷单）。</div>
   <img class="plot" src="data/shap_temporal_comparison.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[07] 图特征增强<span class="tag done">Done</span></summary>
+<summary>[06] 特征组消融 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
 <div class="body">
-  <div class="note">数据：TXS2 + fund_graph_edges.csv → 53K | 模型：LightGBM</div>
+  <div class="note">数据: TXS2 → 53K | 模型: LightGBM，每组独立训练 | 5组: Activity / Diversity / Behavioral / Volume / DeFi</div>
+  <table>
+    <tr><th>特征组</th><th>AUC（仅此组）</th></tr>
+    <tr><td>Activity（交易频率）</td><td class="hi">—</td></tr>
+    <tr><td>Diversity（NFT多样性）</td><td class="hi">—</td></tr>
+    <tr><td>Behavioral（行为模式）</td><td>—</td></tr>
+    <tr><td>Volume（金额）</td><td>—</td></tr>
+    <tr><td>DeFi（Blend操作）</td><td class="lo">—</td></tr>
+  </table>
+  <img class="plot" src="data/ablation_plot.png" onclick="openLightbox(this)">
+</div>
+</details>
+
+<details>
+<summary>[07] 图特征增强 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
+<div class="body">
+  <div class="note">数据: TXS2 + fund_graph_edges.csv → 53K | 模型: LightGBM</div>
   <table>
     <tr><th>特征集</th><th>AUC</th></tr>
     <tr><td>行为特征</td><td class="hi">—</td></tr>
-    <tr><td>图特征</td><td>—</td></tr>
+    <tr><td>图特征（funder graph）</td><td>—</td></tr>
     <tr><td>行为 + 图</td><td class="hi">—</td></tr>
   </table>
-  <div class="note">数字待重跑后更新</div>
   <img class="plot" src="data/graph_augmentation_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
 
-<!-- ===== 鲁棒性 ===== -->
-<div class="sec">鲁棒性</div>
+<!-- ===== Q3 ===== -->
+<div class="sec">Q3: 多鲁棒？</div>
 
 <details>
-<summary>[08] 泛化实验<span class="tag done">Done</span></summary>
+<summary>[08] 泛化实验 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
 <div class="body">
-  <div class="note">数据：TXS2 → 53K | 模型：LightGBM</div>
+  <div class="note">数据: TXS2 → 53K | 模型: LightGBM</div>
   <table>
     <tr><th>实验</th><th>AUC</th></tr>
     <tr><td>标准 5-fold T-30</td><td class="hi">—</td></tr>
-    <tr><td>时间泛化（T-90训练，T-30测试）</td><td class="hi">—</td></tr>
-    <tr><td>种群泛化（50%未见sybil类型）</td><td class="mid">—</td></tr>
+    <tr><td>时间泛化（T-90 训练 → T-30 测试）</td><td class="hi">—</td></tr>
+    <tr><td>种群泛化（50% 未见 sybil 类型）</td><td class="mid">—</td></tr>
   </table>
-  <div class="note">数字待重跑后更新</div>
   <img class="plot" src="data/generalization_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[26] 标签噪声鲁棒性<span class="tag done">Done</span></summary>
+<summary>[26] 标签噪声鲁棒性 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
 <div class="body">
-  <div class="note">数据：nft_feats_labeled_T30.csv（53K）| 模型：LightGBM</div>
+  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM | 随机翻转 is_sybil 标签</div>
   <table>
-    <tr><th>噪声比例</th><th>AUC</th></tr>
-    <tr><td>0%</td><td class="hi">—</td></tr>
-    <tr><td>10%</td><td>—</td></tr>
-    <tr><td>20%</td><td>—</td></tr>
+    <tr><th>噪声比例</th><th>AUC</th><th>vs 基线</th></tr>
+    <tr><td>0%</td><td class="hi">—</td><td>—</td></tr>
+    <tr><td>10%</td><td>—</td><td>—</td></tr>
+    <tr><td>20%</td><td>—</td><td>—</td></tr>
   </table>
-  <div class="note">数字待重跑后更新</div>
   <img class="plot" src="data/label_noise_robustness.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[13][23] 对抗鲁棒性 + 逃避成本<span class="tag done">Done</span></summary>
+<summary>[13][23] 对抗鲁棒性 + 逃避成本 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
 <div class="body">
-  <div class="note">数据：nft_feats_labeled_T30.csv（53K）| 模型：LightGBM</div>
+  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM | 扰动 NFT diversity 特征</div>
   <table>
-    <tr><th>Diversity 降低</th><th>AUC</th><th>积分保留</th></tr>
-    <tr><td>0%</td><td class="hi">—</td><td>100%</td></tr>
+    <tr><th>Diversity 降低</th><th>AUC 变化</th><th>积分保留</th></tr>
+    <tr><td>0%</td><td>—</td><td>100%</td></tr>
     <tr><td>50%</td><td>—</td><td>~55%</td></tr>
     <tr><td>90%</td><td>—</td><td>~33%</td></tr>
   </table>
-  <div class="note">数字待重跑后更新</div>
+  <div class="find">逃避检测的代价（积分损失）远超被检测的风险，在经济上不合算。</div>
   <img class="plot" src="data/adversarial_cost_tradeoff.png" onclick="openLightbox(this)">
 </div>
 </details>
 
-<details>
-<summary>[22] 概率校准<span class="tag done">Done</span></summary>
+<!-- ===== Q4 ===== -->
+<div class="sec">Q4: 能跨协议吗？</div>
+
+<details open>
+<summary>[28] LayerZero 时间消融 <span class="tag done">Done</span> <span class="tag">T-30 AUC 0.946</span></summary>
 <div class="body">
-  <div class="note">数据：nft_feats_labeled_T30.csv（53K）| 模型：LightGBM + Isotonic Regression</div>
+  <div class="note">数据: lz_temporal_features.csv（ETH-only，29,870 地址）| 标签: LZ Proof-of-Sybil | 模型: LightGBM</div>
   <table>
-    <tr><th>模型</th><th>AUC</th><th>Brier Score</th></tr>
-    <tr><td>原始</td><td>—</td><td class="lo">—</td></tr>
-    <tr><td>Isotonic 校准</td><td>—</td><td class="hi">—</td></tr>
+    <tr><th>窗口</th><th>活跃地址</th><th>AUC</th></tr>
+    <tr><td>T-30</td><td>17,072</td><td class="hi">0.9462</td></tr>
+    <tr><td>T-60</td><td>16,781</td><td class="hi">0.9468</td></tr>
+    <tr><td>T-90</td><td>15,616</td><td class="hi">0.9462</td></tr>
   </table>
-  <div class="note">数字待重跑后更新</div>
-  <img class="plot" src="data/calibration_curve.png" onclick="openLightbox(this)">
+  <div class="find">T-30 到 T-90 range = 0.0006，信号极稳定。桥协议行为模式与 NFT 市场不同但同样可检测。</div>
+  <div class="note">ARB + POLY 启用后重跑预计提升。</div>
 </div>
 </details>
 
-<!-- ===== 女巫分析 ===== -->
-<div class="sec">女巫内部分析</div>
-
 <details>
-<summary>[11] 女巫聚类<span class="tag done">Done</span></summary>
+<summary>[24] LayerZero LOPO <span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：TXS2 → <strong>仅 9,817 女巫地址</strong> | 模型：K-means K=3</div>
+  <div class="note">数据: Blur(TXS2/behavior_flags) + Hop(metadata) + LZ(lz_temporal) | 模型: LightGBM LOPO</div>
   <table>
-    <tr><th>类型</th><th>数量</th><th>avg buy_count</th><th>Blend操作</th></tr>
-    <tr><td>散户猎人</td><td>—</td><td>—</td><td>0</td></tr>
-    <tr><td>中量猎人</td><td>—</td><td>—</td><td>0</td></tr>
-    <tr><td>超级机器人</td><td>—</td><td class="hi">—</td><td class="hi">—</td></tr>
+    <tr><th>训练</th><th>测试</th><th>AUC</th></tr>
+    <tr><td>Blur + Hop</td><td>LZ（桥→桥）</td><td class="mid">0.567</td></tr>
+    <tr><td>Blur + LZ</td><td>Hop（NFT→桥）</td><td class="lo">0.434</td></tr>
+    <tr><td>—</td><td>LZ 域内</td><td class="hi">0.892</td></tr>
   </table>
-  <div class="note">数字待重跑后更新（之前错误：用了全体53K而非仅女巫）</div>
-  <img class="plot" src="data/sybil_clustering_plot.png" onclick="openLightbox(this)">
+  <div class="find">同类协议（桥→桥）迁移 0.567，好于跨类（NFT→桥）0.434。协议类型影响迁移效果。</div>
+  <img class="plot" src="data/layerzero_lopo.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[20] K 值选择<span class="tag done">Done</span></summary>
+<summary>[17] 公共特征 LOPO（Blur / Gitcoin / Hop）<span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：nft_feats_labeled_T30.csv → is_sybil=1（仅女巫）| 方法：Elbow + Silhouette</div>
-  <img class="plot" src="data/clustering_k_selection.png" onclick="openLightbox(this)">
-</div>
-</details>
-
-<details>
-<summary>[21] 按 Flag 类型留一泛化<span class="tag done">Done</span></summary>
-<div class="body">
-  <div class="note">数据：nft_feats_labeled_T30.csv | 模型：LightGBM，每次留出一种 flag 类型</div>
+  <div class="note">公共特征: tx_count / total_volume / unique_contracts / wallet_age_days / active_span_days</div>
   <table>
-    <tr><th>留出类型</th><th>AUC</th></tr>
-    <tr><td>BW</td><td class="lo">—</td></tr>
-    <tr><td>FD</td><td class="lo">—</td></tr>
-    <tr><td>ML</td><td class="lo">—</td></tr>
-    <tr><td>HF</td><td class="mid">—</td></tr>
+    <tr><th>测试</th><th>专属特征 AUC</th><th>公共特征 AUC</th></tr>
+    <tr><td>Blur</td><td class="lo">0.220</td><td class="hi">0.624</td></tr>
+    <tr><td>Hop</td><td class="lo">0.376</td><td class="hi">0.780</td></tr>
+    <tr><td>Gitcoin</td><td class="lo">0.466</td><td class="mid">0.468</td></tr>
   </table>
-  <div class="note">数字待重跑后更新</div>
-  <img class="plot" src="data/flag_type_generalization.png" onclick="openLightbox(this)">
+  <div class="find">特征对齐后 Blur-Hop 零样本 0.38 → 0.78。Gitcoin 持平，说明捐赠行为本质不同。</div>
 </div>
 </details>
 
 <details>
-<summary>[25] 开放世界检测（未知类型）<span class="tag done">Done</span></summary>
+<summary>[16] 三协议 LOPO（专属特征）<span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：nft_feats_labeled_T30.csv（53K，BW留出训练集）| 模型：LightGBM + Isolation Forest</div>
+  <div class="note">数据: Blur(TXS2) + Gitcoin(onchain) + Hop(metadata) | 模型: LightGBM LOPO</div>
   <table>
-    <tr><th>方法</th><th>AUC（仅BW测试）</th></tr>
-    <tr><td>LightGBM（无BW训练）</td><td class="lo">—</td></tr>
-    <tr><td>Isolation Forest</td><td class="hi">—</td></tr>
-    <tr><td>两阶段</td><td class="hi">—</td></tr>
+    <tr><th>训练</th><th>测试</th><th>AUC</th></tr>
+    <tr><td>Hop + Gitcoin</td><td>Blur</td><td class="lo">0.220</td></tr>
+    <tr><td>Blur + Gitcoin</td><td>Hop</td><td class="lo">0.376</td></tr>
+    <tr><td>Blur + Hop</td><td>Gitcoin</td><td class="lo">0.466</td></tr>
   </table>
-  <div class="note">数字待重跑后更新</div>
-  <img class="plot" src="data/openworld_detection.png" onclick="openLightbox(this)">
-</div>
-</details>
-
-<!-- ===== 基线对比 ===== -->
-<div class="sec">基线对比</div>
-
-<details>
-<summary>[09][15] ARTEMIS GNN vs LightGBM<span class="tag done">Done</span></summary>
-<div class="body">
-  <div class="note">Exp 09：Artemis/*.pt（官方图数据）| Exp 15：TXS2 → 53K | 模型：GraphSAGE vs LightGBM</div>
-  <div class="find">ArtemisNet 事后 AUC 0.976 → 事前 T-30 AUC 0.586。图依赖空投后 transfer edge，事前图残缺导致失效。</div>
+  <div class="warn">跨协议低 AUC 主要原因是特征集不兼容，见 Exp 17。</div>
 </div>
 </details>
 
 <details>
-<summary>[27] 规则基线<span class="tag done">Done</span></summary>
+<summary>[14][16b] Blur → Hop 迁移 <span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：nft_feats_labeled_T30.csv（53K）| 模型：规则 / LR / RF / LightGBM</div>
+  <div class="note">训练: Blur TXS2（53K，behavior_flags）→ 测试: Hop sybil_addresses.csv</div>
+  <table>
+    <tr><th>训练数据</th><th>AUC</th></tr>
+    <tr><td>Blur only（零样本）</td><td class="lo">0.500</td></tr>
+    <tr><td>Blur + 1% Hop 标注</td><td class="hi">0.982</td></tr>
+    <tr><td>Blur + 20% Hop 标注</td><td class="hi">0.981</td></tr>
+  </table>
+  <div class="warn">零样本失败：NFT 专属特征在 Hop 上不存在。1% Hop 标注后直接跳到 0.982。</div>
+</div>
+</details>
+
+<details>
+<summary>[18] Gitcoin 域内分析 <span class="tag done">Done</span></summary>
+<div class="body">
+  <div class="note">数据: gitcoin/onchain + erc20_features.csv（39,962 地址）| 标签: SADScore | 模型: LightGBM SHAP</div>
+  <div class="warn">域内 AUC 0.599。SADScore 标注的是链上整体异常地址，捐赠特征 SHAP 权重近 0，唯一信号是基础链上指标。</div>
+  <img class="plot" src="data/gitcoin_shap.png" onclick="openLightbox(this)">
+</div>
+</details>
+
+<!-- ===== Supporting ===== -->
+<div class="sec">Supporting: 规则基线 / 女巫分析 / 校准</div>
+
+<details>
+<summary>[27] 规则基线 vs ML <span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
+<div class="body">
+  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: 简单规则 / LR / RF / LightGBM</div>
   <table>
     <tr><th>方法</th><th>AUC</th></tr>
     <tr><td>LightGBM</td><td class="hi">—</td></tr>
@@ -384,91 +369,71 @@
     <tr><td>规则：高买入量</td><td class="mid">—</td></tr>
     <tr><td>规则：钱包年龄 &lt;30d</td><td class="lo">—</td></tr>
   </table>
-  <div class="note">数字待重跑后更新</div>
   <img class="plot" src="data/rule_baselines.png" onclick="openLightbox(this)">
 </div>
 </details>
 
-<!-- ===== 跨协议 ===== -->
-<div class="sec">跨协议验证</div>
-
 <details>
-<summary>[14][16b] Blur → Hop<span class="tag done">Done</span></summary>
+<summary>[11] 女巫策略聚类 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
 <div class="body">
-  <div class="note">训练：Blur TXS2（53K，behavior_flags）| 测试：Hop sybil_addresses.csv | 模型：LightGBM LOPO</div>
+  <div class="note">数据: TXS2 → <strong>仅 9,817 女巫地址</strong>（is_sybil=1）| 模型: K-means K=3</div>
   <table>
-    <tr><th>训练数据</th><th>AUC</th></tr>
-    <tr><td>Blur only（零样本）</td><td class="lo">0.500</td></tr>
-    <tr><td>Blur + 1% Hop 标注</td><td class="hi">0.982</td></tr>
-    <tr><td>Blur + 20% Hop 标注</td><td class="hi">0.981</td></tr>
+    <tr><th>类型</th><th>数量</th><th>avg buy_count</th><th>Blend 操作</th></tr>
+    <tr><td>散户猎人</td><td>—</td><td>—</td><td>无</td></tr>
+    <tr><td>中量猎人</td><td>—</td><td>—</td><td>无</td></tr>
+    <tr><td>超级机器人</td><td>—</td><td class="hi">—</td><td class="hi">有</td></tr>
   </table>
-  <div class="warn">零样本 0.50 失败：Blur 用 NFT 专属特征，在 Hop 上不存在。1% 标注后直接 0.982。</div>
+  <img class="plot" src="data/sybil_clustering_plot.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[16] 三协议 LOPO（专属特征）<span class="tag done">Done</span></summary>
+<summary>[20] 聚类 K 值选择 <span class="tag done">Done</span></summary>
 <div class="body">
-  <div class="note">数据：Blur(TXS2/behavior_flags) + Gitcoin(onchain) + Hop(metadata) | 模型：LightGBM LOPO</div>
-  <table>
-    <tr><th>训练</th><th>测试</th><th>AUC</th></tr>
-    <tr><td>hop+gitcoin</td><td>blur</td><td class="lo">0.220</td></tr>
-    <tr><td>blur+gitcoin</td><td>hop</td><td class="lo">0.376</td></tr>
-    <tr><td>blur+hop</td><td>gitcoin</td><td class="lo">0.466</td></tr>
-  </table>
-  <div class="warn">跨协议 AUC 0.22-0.47。原因是各协议特征集不同，不是行为不通用 — 见 Exp 17。</div>
+  <div class="note">数据: nft_feats_labeled_T30.csv → is_sybil=1（仅女巫）| 方法: Elbow + Silhouette</div>
+  <img class="plot" src="data/clustering_k_selection.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[17] 公共特征集 LOPO<span class="tag done">Done</span></summary>
+<summary>[21] 按 Flag 类型留一泛化 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
 <div class="body">
-  <div class="note">公共特征：tx_count / total_volume / unique_contracts / wallet_age_days / active_span_days</div>
+  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM，每次留出一种 flag 类型</div>
   <table>
-    <tr><th>测试</th><th>专属特征</th><th>公共特征</th></tr>
-    <tr><td>blur</td><td class="lo">0.220</td><td class="hi">0.624</td></tr>
-    <tr><td>hop</td><td class="lo">0.376</td><td class="hi">0.780</td></tr>
-    <tr><td>gitcoin</td><td class="lo">0.466</td><td class="mid">0.468</td></tr>
+    <tr><th>留出类型</th><th>AUC</th></tr>
+    <tr><td>BW（批量提取）</td><td class="lo">—</td></tr>
+    <tr><td>FD（快速转移）</td><td class="lo">—</td></tr>
+    <tr><td>ML（NFT循环）</td><td class="lo">—</td></tr>
+    <tr><td>HF（高频交易）</td><td class="mid">—</td></tr>
   </table>
-  <div class="find">特征对齐后 Blur-Hop 零样本从 0.38 → 0.78。Gitcoin 持平，说明捐赠行为本质不同。</div>
+  <img class="plot" src="data/flag_type_generalization.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[18] Gitcoin 域内分析<span class="tag done">Done</span></summary>
+<summary>[25] 开放世界检测（BW 未见类型）<span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
 <div class="body">
-  <div class="note">数据：gitcoin/onchain_features.csv + erc20_features.csv | 模型：LightGBM SHAP</div>
-  <div class="warn">域内 AUC 0.599。SADScore 标注的是链上整体异常，不是 Gitcoin 专项 sybil，捐赠特征 SHAP 权重接近 0。</div>
-  <img class="plot" src="data/gitcoin_shap.png" onclick="openLightbox(this)">
+  <div class="note">数据: nft_feats_labeled_T30.csv（53K，BW 留出训练集）| 模型: LightGBM + Isolation Forest</div>
+  <table>
+    <tr><th>方法</th><th>AUC（仅 BW 测试）</th></tr>
+    <tr><td>LightGBM（无 BW 训练）</td><td class="lo">—</td></tr>
+    <tr><td>Isolation Forest</td><td class="hi">—</td></tr>
+    <tr><td>两阶段（LGB + IF）</td><td class="hi">—</td></tr>
+  </table>
+  <img class="plot" src="data/openworld_detection.png" onclick="openLightbox(this)">
 </div>
 </details>
 
 <details>
-<summary>[24] LayerZero LOPO<span class="tag done">Done</span></summary>
+<summary>[22] 概率校准 <span class="tag done">Done</span> <span class="tag pending">数字待更新</span></summary>
 <div class="body">
-  <div class="note">数据：Blur(TXS2/behavior_flags) + Hop + LZ(lz_temporal_features.csv) | 模型：LightGBM LOPO</div>
+  <div class="note">数据: nft_feats_labeled_T30.csv（53K）| 模型: LightGBM + Isotonic Regression</div>
   <table>
-    <tr><th>实验</th><th>AUC</th></tr>
-    <tr><td>Hop → LZ（同类桥协议）</td><td class="mid">0.567</td></tr>
-    <tr><td>Blur → LZ（跨域）</td><td class="lo">0.434</td></tr>
-    <tr><td>LZ 域内</td><td class="hi">0.892</td></tr>
+    <tr><th>模型</th><th>AUC</th><th>Brier Score</th></tr>
+    <tr><td>原始</td><td>—</td><td class="lo">—</td></tr>
+    <tr><td>Isotonic 校准</td><td>—</td><td class="hi">—</td></tr>
   </table>
-  <img class="plot" src="data/layerzero_lopo.png" onclick="openLightbox(this)">
-</div>
-</details>
-
-<details open>
-<summary>[28] LayerZero 时间消融<span class="tag done">Done</span><span class="tag">T-30 AUC 0.946</span></summary>
-<div class="body">
-  <div class="note">数据：layerzero/lz_temporal_features.csv（ETH-only）| 模型：LightGBM | 标签：LZ Proof-of-Sybil</div>
-  <table>
-    <tr><th>窗口</th><th>活跃地址</th><th>AUC</th></tr>
-    <tr><td>T-30</td><td>17,072</td><td class="hi">0.9462</td></tr>
-    <tr><td>T-60</td><td>16,781</td><td class="hi">0.9468</td></tr>
-    <tr><td>T-90</td><td>15,616</td><td class="hi">0.9462</td></tr>
-  </table>
-  <div class="find">T-30 到 T-90 range = 0.0006，信号极稳定。LZ 域内 AUC 高于 Blur（0.946 vs 0.793），原因待分析。</div>
-  <div class="note">ARB + POLY 启用后重跑，预计 AUC 进一步提升。</div>
+  <img class="plot" src="data/calibration_curve.png" onclick="openLightbox(this)">
 </div>
 </details>
 
