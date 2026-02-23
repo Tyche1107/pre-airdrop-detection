@@ -429,6 +429,276 @@
 </div>
 </details>
 
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- AI Workflow Mindmap -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="sec">AI-Powered Research Workflow</div>
+
+<details>
+<summary>Architecture Overview <span class="tag">workflow</span></summary>
+<div class="body">
+<div class="find">Human (Adeline) → AI Agent (小昭/OpenClaw) → Sub-agents (parallel) → Tools (DB/Git/API)</div>
+<table>
+<tr><th>Layer</th><th>Role</th><th>Tool</th></tr>
+<tr><td>Human</td><td>Direction, experiment design, result interpretation</td><td>Telegram / Claude Code</td></tr>
+<tr><td>Main Agent</td><td>Task decomposition, coordination, verification</td><td>Claude Opus 4.6 via OpenClaw</td></tr>
+<tr><td>Sub-agents</td><td>Parallel execution of experiments</td><td>Claude Sonnet 4.6 (2-3 concurrent)</td></tr>
+<tr><td>Tools</td><td>Data storage, code, API calls</td><td>PostgreSQL / Python / Git / Alchemy</td></tr>
+</table>
+</div>
+</details>
+
+<details>
+<summary>AI Tool Stack <span class="tag data">tools</span></summary>
+<div class="body">
+
+<details>
+<summary>Models & Platforms</summary>
+<div class="body">
+<table>
+<tr><th>Tool</th><th>Purpose</th><th>Cost</th></tr>
+<tr><td>Claude Code (Max Plan × 2)</td><td>Code generation, debugging, experiment scripts</td><td>$200/mo × 2</td></tr>
+<tr><td>Claude Opus 4.6</td><td>Main agent — complex reasoning, task decomposition</td><td>Included</td></tr>
+<tr><td>Claude Sonnet 4.6</td><td>Sub-agents — parallel experiment execution</td><td>Included</td></tr>
+<tr><td>OpenClaw</td><td>Agent runtime (session/sub-agent/cron management)</td><td>Open source</td></tr>
+</table>
+</div>
+</details>
+
+<details>
+<summary>MCP (Model Context Protocol) Integrations</summary>
+<div class="body">
+<table>
+<tr><th>MCP Server</th><th>Function</th></tr>
+<tr><td>Supabase</td><td>Direct DB queries/writes without CLI</td></tr>
+<tr><td>GitHub</td><td>Create issues, commit, push, PRs</td></tr>
+<tr><td>Playwright</td><td>Browser automation for data scraping</td></tr>
+<tr><td>Context7</td><td>Up-to-date documentation lookup</td></tr>
+</table>
+<div class="note">MCP allows AI to directly operate tools (read/write DB, commit code) instead of describing what to do.</div>
+</div>
+</details>
+
+<details>
+<summary>Claude Code Skills (installed)</summary>
+<div class="body">
+<table>
+<tr><th>Skill</th><th>Use</th></tr>
+<tr><td>postgres-patterns</td><td>Query optimization, indexing, Supabase patterns</td></tr>
+<tr><td>python-patterns</td><td>Python data processing best practices</td></tr>
+<tr><td>python-testing</td><td>Automated testing generation</td></tr>
+<tr><td>ccxt-python</td><td>Exchange API data fetching</td></tr>
+<tr><td>coding-agent</td><td>Delegate tasks to background sub-agents</td></tr>
+<tr><td>security-scan</td><td>Security vulnerability detection</td></tr>
+</table>
+</div>
+</details>
+
+<details>
+<summary>Claude Code Plugins (42 installed)</summary>
+<div class="body">
+<table>
+<tr><th>Category</th><th>Plugins</th></tr>
+<tr><td>Data/DB</td><td>supabase, firebase</td></tr>
+<tr><td>Code Quality</td><td>code-review, pr-review-toolkit, security-guidance, code-simplifier</td></tr>
+<tr><td>DevOps</td><td>github, gitlab, playwright</td></tr>
+<tr><td>Productivity</td><td>slack, linear, asana</td></tr>
+<tr><td>Development</td><td>feature-dev, frontend-design, hookify, stripe</td></tr>
+<tr><td>AI/Agent</td><td>agent-sdk-dev, skill-creator, plugin-dev</td></tr>
+</table>
+</div>
+</details>
+
+</div>
+</details>
+
+<details>
+<summary>5-Phase Workflow <span class="tag done">complete</span></summary>
+<div class="body">
+
+<details>
+<summary>Phase 0: Data Preparation <span class="tag">~3h</span></summary>
+<div class="body">
+<div class="find">Input: Raw data files on Desktop → Output: PostgreSQL HasciDB with indexed tables</div>
+<table>
+<tr><th>Step</th><th>What AI Does</th></tr>
+<tr><td>1. Explore data</td><td>Read CSV files, understand schema (53,482 users, 4 behavior flags)</td></tr>
+<tr><td>2. Design DB</td><td>Create tables: wallets / transactions / transfers / interactions / labels</td></tr>
+<tr><td>3. Import</td><td>Bulk import 3.2M transactions + behavior labels</td></tr>
+<tr><td>4. Validate</td><td>Verify sybil distribution: 9,817 sybil / 43,665 normal</td></tr>
+</table>
+<div class="note">Key data: airdrop_targets_behavior_flags.csv (bw/ml/fd/hf flags), TXS2_1662_1861.csv (3.2M NFT txs)</div>
+</div>
+</details>
+
+<details>
+<summary>Phase 1: Feature Engineering <span class="tag">~4h</span></summary>
+<div class="body">
+<div class="find">20+ behavioral features with temporal cutoff at T-7/14/30/60/90 before airdrop</div>
+<table>
+<tr><th>Feature Group</th><th>Features</th><th>Top Importance</th></tr>
+<tr><td>Trading behavior</td><td>tx_count, buy/sell_count, buy/sell_volume, unique_collections</td><td class="hi">unique_collections: 37-49%</td></tr>
+<tr><td>Time patterns</td><td>activity_window_days, avg_tx_interval, max_daily_tx</td><td>activity_window: ~5%</td></tr>
+<tr><td>Network</td><td>unique_counterparties, unique_contracts, contract_per_tx</td><td class="hi">unique_interactions: 7-22%</td></tr>
+<tr><td>Funding</td><td>recv_sent_ratio, avg_value</td><td>buy_volume: ~12%</td></tr>
+</table>
+<div class="note">Temporal cutoff: T0 = 2023-11-21 (Blur S2 airdrop). Features computed only from pre-airdrop data.</div>
+</div>
+</details>
+
+<details>
+<summary>Phase 2: LightGBM Training <span class="tag">~2h</span></summary>
+<div class="body">
+<div class="find">Parallel sub-agents: one per temporal window (T-0 to T-90)</div>
+<table>
+<tr><th>Window</th><th>AUC (5-fold CV)</th><th>vs ARTEMIS (0.803)</th></tr>
+<tr><td>T-0</td><td class="hi">0.798</td><td>-0.005</td></tr>
+<tr><td>T-7</td><td class="hi">0.796</td><td>-0.007</td></tr>
+<tr><td>T-14</td><td class="hi">0.796</td><td>-0.007</td></tr>
+<tr><td>T-30</td><td class="hi">0.793</td><td>-0.010</td></tr>
+<tr><td>T-60</td><td>0.791</td><td>-0.012</td></tr>
+<tr><td>T-90</td><td>0.789</td><td>-0.014</td></tr>
+</table>
+<div class="find">Signal drop T-0→T-90: only 0.009. Sybil fingerprints are established early and persist.</div>
+</div>
+</details>
+
+<details>
+<summary>Phase 3: ARTEMIS GNN Reproduction <span class="tag">~3h</span></summary>
+<div class="body">
+<table>
+<tr><th>Model</th><th>Timing</th><th>AUC</th></tr>
+<tr><td>ArtemisNet (GraphSAGE)</td><td>Post-airdrop (full graph)</td><td class="hi">0.976</td></tr>
+<tr><td>ArtemisNet (GraphSAGE)</td><td>Pre-airdrop T-30</td><td class="lo">0.586</td></tr>
+<tr><td>LightGBM</td><td>Pre-airdrop T-30</td><td class="hi">0.793</td></tr>
+</table>
+<div class="warn">GNN relies on post-airdrop transfer edges (token consolidation). Remove those edges → AUC drops from 0.976 to 0.586. LightGBM behavioral features are unaffected by timing.</div>
+</div>
+</details>
+
+<details>
+<summary>Phase 4: Cross-Protocol Validation <span class="tag">~4h</span></summary>
+<div class="body">
+<table>
+<tr><th>Experiment</th><th>AUC</th><th>Note</th></tr>
+<tr><td>LayerZero T-30</td><td class="hi">0.946</td><td>Exceeds ARTEMIS baseline</td></tr>
+<tr><td>LOPO: Hop→LZ</td><td>0.567</td><td>Zero-shot transfer</td></tr>
+<tr><td>LOPO: Blur→LZ</td><td>0.434</td><td>Zero-shot transfer</td></tr>
+<tr><td>Blur→Hop (zero-shot)</td><td>0.500</td><td>Random-level</td></tr>
+<tr><td>Blur→Hop (1% fine-tune)</td><td class="hi">0.982</td><td>Minimal fine-tuning recovers</td></tr>
+</table>
+</div>
+</details>
+
+</div>
+</details>
+
+<details>
+<summary>Parallelism & Quality Control <span class="tag">workflow</span></summary>
+<div class="body">
+
+<details>
+<summary>Sub-agent Parallel Strategy</summary>
+<div class="body">
+<div class="note">Rule: max 2-3 concurrent sub-agents (avoid API 429 rate limits)</div>
+<table>
+<tr><th>Pattern</th><th>Example</th></tr>
+<tr><td>Independent parallel</td><td>LZ data fetch ∥ Hop data fetch ∥ Gitcoin features</td></tr>
+<tr><td>Dependent serial</td><td>Feature engineering → Model training → SHAP analysis</td></tr>
+<tr><td>Fan-out verification</td><td>Main agent spawns reviewer sub-agent for each completed experiment</td></tr>
+</table>
+</div>
+</details>
+
+<details>
+<summary>Quality Assurance</summary>
+<div class="body">
+<table>
+<tr><th>Check</th><th>Method</th></tr>
+<tr><td>Self-verification</td><td>Each script prints AUC, sample count, feature dims</td></tr>
+<tr><td>Cross-validation</td><td>5-fold CV (not single split)</td></tr>
+<tr><td>Cross-model</td><td>LightGBM vs GNN comparison</td></tr>
+<tr><td>Cross-dataset</td><td>Blur vs LZ vs Hop consistency</td></tr>
+<tr><td>Git safety net</td><td>Every experiment = one commit, revert anytime</td></tr>
+</table>
+</div>
+</details>
+
+</div>
+</details>
+
+<details>
+<summary>Prompting Techniques (How Adeline Communicates) <span class="tag data">tips</span></summary>
+<div class="body">
+
+<details>
+<summary>6 Prompting Patterns</summary>
+<div class="body">
+<table>
+<tr><th>#</th><th>Pattern</th><th>Example</th></tr>
+<tr><td>1</td><td>One-line direction, AI decomposes</td><td>"复现 ARTEMIS 并验证事前检测可行性"</td></tr>
+<tr><td>2</td><td>Point to problem, not solution</td><td>"标签文件用错了，应该用 behavior_flags"</td></tr>
+<tr><td>3</td><td>Challenge results</td><td>"GNN 事前为什么跌这么多？去查"</td></tr>
+<tr><td>4</td><td>Give data path, let AI explore</td><td>"你自己去桌面看"</td></tr>
+<tr><td>5</td><td>Batch assign + parallel</td><td>"LZ/Gitcoin/Hop 的 inferred 全部补齐"</td></tr>
+<tr><td>6</td><td>Correct immediately</td><td>"我说了，只入库以太坊空投结束的项目"</td></tr>
+</table>
+</div>
+</details>
+
+<details>
+<summary>Key Principles</summary>
+<div class="body">
+<table>
+<tr><th>Do</th><th>Don't</th></tr>
+<tr><td>Say WHAT to do</td><td>Say HOW to do it step-by-step</td></tr>
+<tr><td>Give context & data paths</td><td>Write detailed procedures</td></tr>
+<tr><td>Challenge suspicious results</td><td>Blindly accept AI output</td></tr>
+<tr><td>Batch multiple tasks</td><td>Assign one at a time</td></tr>
+<tr><td>Correct fast when wrong</td><td>Wait until AI finishes to correct</td></tr>
+<tr><td>Demand DB verification</td><td>Accept "should be working"</td></tr>
+</table>
+</div>
+</details>
+
+</div>
+</details>
+
+<details>
+<summary>Speed Comparison <span class="tag done">10x faster</span></summary>
+<div class="body">
+<table>
+<tr><th>Step</th><th>Traditional</th><th>AI Agent</th><th>Speedup</th></tr>
+<tr><td>Data import + cleaning</td><td>1-2 days</td><td>3 hours</td><td class="hi">5-8x</td></tr>
+<tr><td>Feature engineering</td><td>3-5 days</td><td>4 hours</td><td class="hi">10-15x</td></tr>
+<tr><td>Model training + tuning</td><td>2-3 days</td><td>2 hours</td><td class="hi">15-20x</td></tr>
+<tr><td>GNN reproduction</td><td>1-2 weeks</td><td>3 hours</td><td class="hi">30-50x</td></tr>
+<tr><td>Cross-protocol validation</td><td>3-5 days</td><td>4 hours</td><td class="hi">10-15x</td></tr>
+<tr><td>Results compilation</td><td>2-3 days</td><td>1 hour</td><td class="hi">20-30x</td></tr>
+<tr><td><b>Total</b></td><td><b>3-4 weeks</b></td><td><b>~20 hours</b></td><td class="hi"><b>~10x</b></td></tr>
+</table>
+<div class="find">Acceleration sources: code generation speed (10min vs 2-4h per script), parallel sub-agents, instant debugging, persistent context, 24/7 execution</div>
+<div class="note">Human still irreplaceable for: research direction, experiment design, result interpretation, paper writing, catching label errors</div>
+</div>
+</details>
+
+<details>
+<summary>HasciDB2 — Sybil Detection Database <span class="tag data">extension</span></summary>
+<div class="body">
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Projects</td><td>9 (Blur, Hop, LayerZero, Gitcoin, Across, hop_arb/op/eth/poly)</td></tr>
+<tr><td>Total users</td><td>345,150</td></tr>
+<tr><td>Official sybil</td><td>48,240</td></tr>
+<tr><td>Inferred sybil</td><td>12,675</td></tr>
+<tr><td>Rule config</td><td>config/rule_registry.json (bw/ml/fd/hf centralized)</td></tr>
+<tr><td>Frontend</td><td>GitHub Pages: address search, project list, CSV export</td></tr>
+</table>
+<div class="note">GitHub: UW-Decentralized-Computing-Lab/HasciDB2</div>
+</div>
+</details>
+
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
   <img id="lightbox-img" src="">
 </div>
